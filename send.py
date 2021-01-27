@@ -7,14 +7,13 @@ from typing import Union
 import qrcode
 from tqdm.auto import tqdm
 
+from data import Encoder
+
 
 class QrSender:
     def __init__(self, file: Union[str, Path]):
         self.file = Path(file)
-        self.data = self.file.read_bytes()
-
-        size = 100
-        self.chunks = [self.data[i : i + size] for i in range(0, len(self.data), size)]
+        self._encoder = Encoder(self.file.read_bytes())
 
     @staticmethod
     def make_qr(data: bytes) -> str:
@@ -24,19 +23,19 @@ class QrSender:
         return base64.b64encode(buffer.getvalue()).decode()
 
     @staticmethod
-    def mk_html_img(data: bytes, i: int) -> str:
+    def mk_html_img(payload: bytes, name: str) -> str:
         return (
             f'<table border="1" style="float:left;font-size:30">'
-            f'<tr><td><img src="data:image/png;base64,{QrSender.make_qr(data)}"></td></tr>'
-            f'<tr><td align="center">{i}</td></tr></table>'
+            f'<tr><td><img src="data:image/png;base64,{QrSender.make_qr(payload)}" width="500"></td></tr>'
+            f'<tr><td align="center">{name}</td></tr></table>'
         )
 
     def save_html(self, p: Path) -> int:
         data_length = p.write_text(
             "".join(
                 [
-                    self.mk_html_img(chunk, i)
-                    for i, chunk in enumerate(tqdm(self.chunks))
+                    self.mk_html_img(payload, name)
+                    for name, payload in tqdm(self._encoder.payloads.items())
                 ]
             )
         )
