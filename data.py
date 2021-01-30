@@ -1,3 +1,4 @@
+import base64
 import hashlib
 from functools import cached_property
 from pathlib import Path
@@ -24,7 +25,9 @@ class Encoder:
     @cached_property
     def payloads(self) -> Dict[str, bytes]:
         data_payloads = {
-            str(counter + 1): f"{counter + 1}:".encode() + data
+            str(
+                counter + 1
+            ): f'{counter + 1}:{base64.b64encode(data).decode("utf-8")}'.encode()
             for counter, data in enumerate(self.chunks)
         }
         payloads = {**self.headers, **data_payloads}
@@ -65,7 +68,7 @@ class Decoder:
 
         data = b''.join(
             [
-                data
+                base64.b64decode(data)
                 for i, data in sorted(
                     self.received_iterations.items(),
                     key=lambda _: int(_[0]) if _ in {b'LEN', b'HASH'} else 0,
