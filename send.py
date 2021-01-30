@@ -13,7 +13,7 @@ from data import Encoder
 class QrSender:
     def __init__(self, file: Union[str, Path]):
         self.file = Path(file)
-        self._encoder = Encoder(self.file.read_bytes())
+        self._encoder = Encoder(self.file)
 
     @staticmethod
     def make_qr(data: bytes) -> str:
@@ -42,11 +42,13 @@ class QrSender:
         return data_length
 
     def show(self):
-        with tempfile.NamedTemporaryFile(mode='r', suffix='.html') as f:
-            self.save_html(Path(f.name))
-            print(f.name)
-            input('Press any key to delete it...')
+        f = self.file.with_suffix(self.file.suffix + '.html')
+        self.save_html(f)
+        print(f)
 
 
 if __name__ == "__main__":
-    QrSender('tmp/example.png').show()
+    import sys
+
+    assert len(sys.argv) == 2
+    QrSender(sys.argv[1]).show()
