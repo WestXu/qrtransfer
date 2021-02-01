@@ -7,7 +7,7 @@ from typing import Union
 import qrcode
 from tqdm.auto import tqdm
 
-from data import Encoder
+from .data import Encoder
 
 
 class QrSender:
