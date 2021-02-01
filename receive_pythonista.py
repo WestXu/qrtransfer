@@ -1,14 +1,12 @@
-# coding: utf-8
-# Barcode scanner demo for Pythonista
-# Based on http://www.infragistics.com/community/blogs/torrey-betts/archive/2013/10/10/scanning-barcodes-with-ios-7-objective-c.aspx
-
 from ctypes import c_void_p
 
 import sound
 import ui
 from objc_util import *
 
-found_codes = set()
+from data import Decoder
+
+decoder = Decoder()
 main_view = None
 
 AVCaptureSession = ObjCClass('AVCaptureSession')
@@ -25,11 +23,25 @@ def captureOutput_didOutputMetadataObjects_fromConnection_(
 ):
     objects = ObjCInstance(_metadata_objects)
     for obj in objects:
-        s = str(obj.stringValue())
-        if s not in found_codes:
-            found_codes.add(s)
-            sound.play_effect('digital:PowerUp7')
-        main_view['label'].text = 'Last scan: ' + s
+        try:
+            chunk = str(obj.stringValue()).encode()
+            if decoder.process_chunk(chunk):
+                sound.play_effect('digital:PowerUp7')
+        except Exception as e:
+            print(e)
+        main_view['label'].text = (
+            str(
+                sorted(
+                    [
+                        int(_)
+                        for _ in decoder.expecting
+                        if _ not in {b'NAME', b'LEN', b'HASH'}
+                    ]
+                )
+            )
+            if decoder.lengh is not None
+            else 'No length got.'
+        )
 
 
 MetadataDelegate = create_objc_class(
@@ -43,7 +55,7 @@ MetadataDelegate = create_objc_class(
 def main():
     global main_view
     delegate = MetadataDelegate.new()
-    main_view = ui.View(frame=(0, 0, 400, 400))
+    main_view = ui.View(frame=(0, 0, 800, 800))
     main_view.name = 'Barcode Scanner'
     session = AVCaptureSession.alloc().init()
     device = AVCaptureDevice.defaultDeviceWithMediaType_('vide')
@@ -62,7 +74,7 @@ def main():
     prev_layer.frame = ObjCInstance(main_view).bounds()
     prev_layer.setVideoGravity_('AVLayerVideoGravityResizeAspectFill')
     ObjCInstance(main_view).layer().addSublayer_(prev_layer)
-    label = ui.Label(frame=(0, 0, 400, 30), flex='W', name='label')
+    label = ui.Label(frame=(0, 0, 800, 30), flex='W', name='label')
     label.background_color = (0, 0, 0, 0.5)
     label.text_color = 'white'
     label.text = 'Nothing scanned yet'
@@ -75,8 +87,9 @@ def main():
     delegate.release()
     session.release()
     output.release()
-    if found_codes:
-        print('All scanned codes:\n' + '\n'.join(found_codes))
+
+    decoder.check_integrity()
+    decoder.save_file()
 
 
 if __name__ == '__main__':
