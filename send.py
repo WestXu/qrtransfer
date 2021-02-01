@@ -1,6 +1,5 @@
 import base64
 import io
-import tempfile
 from pathlib import Path
 from typing import Union
 
