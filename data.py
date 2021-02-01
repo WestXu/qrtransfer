@@ -1,7 +1,7 @@
 import base64
 import hashlib
 from pathlib import Path
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
 
 class cached_property:
@@ -52,7 +52,7 @@ class Encoder:
 
 class Decoder:
     def __init__(self):
-        self.expected_iterations = None
+        self.expected_iterations: Optional[Set[bytes]] = None
         self.received_iterations: Dict[bytes, bytes] = {}
         self.file_name = None
         self.hash = None
@@ -65,7 +65,7 @@ class Decoder:
     def set_length(self, length: int):
         print(f'[*] The message will come in {length} parts')
         self.length = length
-        self.expected_iterations: Set[bytes] = {b'NAME', b'LEN', b'HASH'} | {
+        self.expected_iterations = {b'NAME', b'LEN', b'HASH'} | {
             str(i + 1).encode() for i in range(length)
         }
 
@@ -75,7 +75,7 @@ class Decoder:
 
     @property
     def expecting(self) -> Set[bytes]:
-        assert self.length is not None
+        assert self.expected_iterations is not None
         return self.expected_iterations - set(self.received_iterations.keys())
 
     @property
@@ -136,7 +136,7 @@ class Decoder:
 if __name__ == '__main__':
     import random
 
-    encoder = Encoder(Path('data.py'))
+    encoder = Encoder(Path(__file__))
     payloads = list(encoder.payloads.values())
     random.shuffle(payloads)
 
