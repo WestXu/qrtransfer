@@ -1,5 +1,6 @@
 import base64
 import io
+import sys
 from pathlib import Path
 from typing import Union
 
@@ -46,8 +47,6 @@ class QrSender:
         print(f)
 
 
-if __name__ == "__main__":
-    import sys
-
+def main():
     assert len(sys.argv) == 2
     QrSender(sys.argv[1]).show()
