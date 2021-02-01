@@ -56,7 +56,7 @@ class Decoder:
         self.received_iterations: Dict[bytes, bytes] = {}
         self.file_name = None
         self.hash = None
-        self.lengh = None
+        self.length = None
 
     def set_name(self, name: str):
         print(f'[*] File name: {name}')
@@ -64,7 +64,7 @@ class Decoder:
 
     def set_length(self, length: int):
         print(f'[*] The message will come in {length} parts')
-        self.lengh = length
+        self.length = length
         self.expected_iterations: Set[bytes] = {b'NAME', b'LEN', b'HASH'} | {
             str(i + 1).encode() for i in range(length)
         }
@@ -75,12 +75,12 @@ class Decoder:
 
     @property
     def expecting(self) -> Set[bytes]:
-        assert self.lengh is not None
+        assert self.length is not None
         return self.expected_iterations - set(self.received_iterations.keys())
 
     @property
     def is_finished(self) -> bool:
-        if self.lengh is None:
+        if self.length is None:
             return False
         return len(self.expecting) == 0
 

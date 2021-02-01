@@ -39,7 +39,7 @@ def captureOutput_didOutputMetadataObjects_fromConnection_(
                     ]
                 )
             )
-            if decoder.lengh is not None
+            if decoder.length is not None
             else 'No length got.'
         )
 
