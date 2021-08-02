@@ -48,8 +48,8 @@ def encode(file_name, int_array) -> Dict[str, str]:
 
 def mk_html_img(payload: bytes, name: str) -> str:
     return (
-        f'<table border="1" style="float:left;font-size:30">'
-        f'<tr><td id="qr-{name}"></td></tr>'
+        f'<table style="float:left;font-size:30">'
+        f'<tr><td class="qrtd" id="qr-{name}"></td></tr>'
         f'<tr><td align="center">{name}</td></tr></table>'
     )
 
