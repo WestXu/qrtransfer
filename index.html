@@ -1,0 +1,29 @@
+<html>
+
+<head>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9.5/brython.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
+</head>
+
+<body onload="brython()">
+    <script type="text/python">
+        from browser import document, alert, window, bind
+
+        def draw_qr(dom_id, payload):
+            dom = document[dom_id]
+            dom.innerHTML = ""
+            window.QRCode.new(dom, payload)
+
+        @bind(document["mybutton"], "click")
+        def echo(event):
+            draw_qr("qrcode", document["zone"].value)
+
+    </script>
+
+    <input id="zone">
+    <button id="mybutton">click !</button>
+    <div id="qrcode"></div>
+
+</body>
+
+</html>
