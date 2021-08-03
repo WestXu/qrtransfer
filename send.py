@@ -56,6 +56,7 @@ def mk_html_img(payload: bytes, name: str) -> str:
 
 @bind(document["file-selector"], "change")
 def read_file_content(ev):
+    document["progress"].innerHTML = "Processing..."
     def onload(event):
         buffer = event.target.result
         int_array = window.array_from(window.Uint8Array.new(buffer))
@@ -69,6 +70,8 @@ def read_file_content(ev):
 
         for name, payload in encoded.items():
             draw_qr(f"qr-{name}", payload)
+
+        document["progress"].innerHTML = ""
 
     reader = window.FileReader.new()
     reader.bind("load", onload)
