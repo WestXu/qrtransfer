@@ -1,3 +1,4 @@
+mod decoder;
 mod encoder;
 mod utils;
 use utils::{log, set_panic_hook};
@@ -31,24 +32,21 @@ pub fn send(file_name: &str, int_array: &JsValue) -> Result<(), JsValue> {
 pub fn receive() -> Result<(), JsValue> {
     set_panic_hook();
 
-    let chunks = vec![
-        "77u/VHJhbnNmZXIgeW91ciBmaWxlIGZyb20gYW4gYWlyIGdhcHBlZCBjb21wdXRlciB0byBpT1MvaVBob25lL2lQYWQgdXNpbmcgb25seSBxcmNvZGUsIG5vIHdpZmkvdXNiLw==" ,
-        "Ymx1ZXRvb3RoIG5lZWRlZC4="
-        ];
-
-    let data = chunks
-        .iter()
-        .map(|s| base64::decode(s).unwrap())
-        .collect::<Vec<Vec<u8>>>()
-        .concat();
-
-    let base64_data = base64::encode(data);
+    let mut decoder = decoder::Decoder::new();
+    decoder.process_chunk("NAME:YmluRmlsZS50eHQ=".to_string());
+    decoder.process_chunk("LEN:2".to_string());
+    decoder.process_chunk("HASH:23cbdb7dc9c34166abd505f2518152a6c05978d5".to_string());
+    decoder.process_chunk("1:77u/VHJhbnNmZXIgeW91ciBmaWxlIGZyb20gYW4gYWlyIGdhcHBlZCBjb21wdXRlciB0byBpT1MvaVBob25lL2lQYWQgdXNpbmcgb25seSBxcmNvZGUsIG5vIHdpZmkvdXNiLw==".to_string());
+    decoder.process_chunk("2:Ymx1ZXRvb3RoIG5lZWRlZC4=".to_string());
 
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
     let a = document.create_element("a")?;
-    a.set_attribute("href", &("data:;base64,".to_string() + &base64_data))
-        .unwrap();
+    a.set_attribute(
+        "href",
+        &("data:;base64,".to_string() + &decoder.to_base64()),
+    )
+    .unwrap();
     a.set_attribute("download", "binFile.txt").unwrap();
     a.set_inner_html("Download");
 
