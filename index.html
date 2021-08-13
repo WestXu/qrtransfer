@@ -12,9 +12,10 @@
 
 <body>
     <script type="module">
-        import init, { run } from './pkg/qrtransfer.js';
+        import init, { send, receive } from './pkg/qrtransfer.js';
         await init();
-        window.run = run
+        window.send = send
+        window.receive = receive
     </script>
 
     <input type="file" id="file-selector">
@@ -30,7 +31,7 @@
                 buffer = event.target.result
                 int_array = Array.from(new Uint8Array(buffer))
                 file_name = fileSelector.files[0].name
-                window.run(file_name, int_array)
+                window.send(file_name, int_array)
                 progress_div.innerText = "Finished."
             });
             reader.readAsArrayBuffer(fileSelector.files[0])
@@ -40,19 +41,7 @@
     </script>
     <div id="progress"></div>
     <div id="qrcode"></div>
-    <script>
-        function receive() {
-            let bytes = [65, 108, 105, 99, 101, 39, 115, 32, 65, 100, 118, 101, 110, 116, 117, 114, 101];
-
-            let base64data = btoa(String.fromCharCode.apply(null, bytes));
-
-            let a = document.createElement('a');
-            a.href = 'data:;base64,' + base64data;
-            a.download = 'binFile.txt';
-            a.click();
-        }
-    </script>
-    <button onclick="receive()">receive</button>
+    <button onclick="window.receive()">receive</button>
 </body>
 
 </html>
