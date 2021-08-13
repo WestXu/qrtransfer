@@ -1,0 +1,24 @@
+[package]
+name = "qrtransfer"
+version = "0.1.0"
+authors = ["lxu <lxu@junzhiam.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+qrcode = "*"
+base64 = "*"
+sha-1 = "*"
+indexmap = "*"
+wasm-bindgen = { version = "*", features = ["serde-serialize"] }
+console_error_panic_hook = "*"
+web-sys = { version = "*", features = [
+    'Document',
+    'Element',
+    'HtmlElement',
+    'Node',
+    'Window',
+    'console',
+] }

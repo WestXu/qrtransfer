@@ -1,8 +1,7 @@
-!.gitkeep
-.coverage*
-.env
-*.egg-info/
-__pycache__/
-.vscode
-.pytest_cache
+/target
+**/*.rs.bk
+Cargo.lock
+bin/
+pkg/
+wasm-pack.log
 tmp/

@@ -1,20 +1,38 @@
 <html>
 
 <head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
     <style>
-        td.qrtd {
-            padding: 30px;
+        svg {
+            width: 200 !important;
+            height: 200 !important;
         }
     </style>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9/brython.min.js"></script>
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/brython@3.9/brython_stdlib.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js"></script>
 </head>
 
-<body onload="brython()">
-    <script type="text/javascript">window.array_from = Array.from;</script>
-    <script type="text/python" src="send.py"></script>
+<body>
+    <script type="module">
+        import init, { run } from './pkg/qrtransfer.js';
+        await init();
+        window.run = run
+    </script>
+
     <input type="file" id="file-selector">
+    <script>
+        const fileSelector = document.getElementById("file-selector")
+        function read_file_content(ev) {
+            const reader = new FileReader();
+            reader.addEventListener('load', (ev) => {
+                buffer = event.target.result
+                int_array = Array.from(new Uint8Array(buffer))
+                file_name = fileSelector.files[0].name
+                window.run(file_name, int_array)
+            });
+            reader.readAsArrayBuffer(fileSelector.files[0])
+        }
+
+        document.getElementById("file-selector").addEventListener("change", read_file_content)
+    </script>
     <div id="progress"></div>
     <div id="qrcode"></div>
 </body>
