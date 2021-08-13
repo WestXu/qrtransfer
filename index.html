@@ -40,6 +40,19 @@
     </script>
     <div id="progress"></div>
     <div id="qrcode"></div>
+    <script>
+        function receive() {
+            let bytes = [65, 108, 105, 99, 101, 39, 115, 32, 65, 100, 118, 101, 110, 116, 117, 114, 101];
+
+            let base64data = btoa(String.fromCharCode.apply(null, bytes));
+
+            let a = document.createElement('a');
+            a.href = 'data:;base64,' + base64data;
+            a.download = 'binFile.txt';
+            a.click();
+        }
+    </script>
+    <button onclick="receive()">receive</button>
 </body>
 
 </html>
