@@ -19,6 +19,7 @@ jobs:
           version: "latest"
 
       - run: wasm-pack build --release --target web --out-dir publish/pkg
+      - run: find ./publish/pkg -name ".gitignore" -delete
       - run: cp index.html ./publish/
 
       - name: Deploy to GitHub Pages
