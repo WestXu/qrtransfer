@@ -82,7 +82,7 @@ class Decoder:
         self.received_iterations[i] = data
 
         if i == b'NAME':
-            self.set_name(data.decode())
+            self.set_name(base64.b64decode(data).decode())
 
         if i == b'LEN':
             self.set_length(int(data))

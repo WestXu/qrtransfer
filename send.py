@@ -20,7 +20,7 @@ class Encoder:
     def headers(self) -> Dict[str, str]:
         final_hash = hashlib.sha1(self.data).hexdigest()
         return {
-            'NAME': f'NAME:{self.file_name}',
+            'NAME': f'NAME:{base64.b64encode(self.file_name.encode()).decode("utf-8")}',
             'LEN': f'LEN:{len(self.chunks)}',
             'HASH': f'HASH:{final_hash}',
         }
@@ -57,6 +57,7 @@ def mk_html_img(payload: bytes, name: str) -> str:
 @bind(document["file-selector"], "change")
 def read_file_content(ev):
     document["progress"].innerHTML = "Processing..."
+
     def onload(event):
         buffer = event.target.result
         int_array = window.array_from(window.Uint8Array.new(buffer))
