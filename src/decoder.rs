@@ -113,14 +113,7 @@ impl Decoder {
         self.received_iterations
             .insert(i.to_string(), data.to_string());
 
-        log(&format!("received {}", i));
-        log(&format!(
-            "received_iterations {:?}",
-            self.received_iterations
-        ));
-        if self.status == Status::Started {
-            log(&format!("expecting {:?}", self.expecting()));
-        }
+        log(&format!("received {}", chunk));
         match i {
             "NAME" => self.set_name(String::from_utf8(base64::decode(data).unwrap()).unwrap()),
             "LEN" => self.set_length(data.to_string().parse::<usize>().unwrap()),
