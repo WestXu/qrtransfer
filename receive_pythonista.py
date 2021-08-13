@@ -134,7 +134,7 @@ def captureOutput_didOutputMetadataObjects_fromConnection_(
             else 'No length got.'
             if decoder.length is None
             else str(
-                list({b'NAME', b'LEN', b'HASH'} - decoder.expecting)
+                list({b'NAME', b'LEN', b'HASH'} & decoder.expecting)
                 + sorted(
                     [
                         int(_)
