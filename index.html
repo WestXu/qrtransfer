@@ -1,0 +1,40 @@
+<html>
+
+<head>
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <style>
+        svg {
+            width: 200 !important;
+            height: 200 !important;
+        }
+    </style>
+</head>
+
+<body>
+    <script type="module">
+        import init, { run } from './pkg/qrtransfer.js';
+        await init();
+        window.run = run
+    </script>
+
+    <input type="file" id="file-selector">
+    <script>
+        const fileSelector = document.getElementById("file-selector")
+        function read_file_content(ev) {
+            const reader = new FileReader();
+            reader.addEventListener('load', (ev) => {
+                buffer = event.target.result
+                int_array = Array.from(new Uint8Array(buffer))
+                file_name = fileSelector.files[0].name
+                window.run(file_name, int_array)
+            });
+            reader.readAsArrayBuffer(fileSelector.files[0])
+        }
+
+        document.getElementById("file-selector").addEventListener("change", read_file_content)
+    </script>
+    <div id="progress"></div>
+    <div id="qrcode"></div>
+</body>
+
+</html>
