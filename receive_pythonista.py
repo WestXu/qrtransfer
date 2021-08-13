@@ -1,13 +1,25 @@
 import base64
 import hashlib
 from ctypes import c_void_p
-from functools import cached_property
 from pathlib import Path
 from typing import Dict, Optional, Set
 
 import sound
 import ui
 from objc_util import *
+
+
+class cached_property:
+    def __init__(self, func):
+        self.__doc__ = getattr(func, "__doc__")
+        self.func = func
+
+    def __get__(self, obj, cls):
+        if obj is None:
+            return self
+
+        value = obj.__dict__[self.func.__name__] = self.func(obj)
+        return value
 
 
 class Decoder:
