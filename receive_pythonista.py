@@ -117,8 +117,13 @@ def captureOutput_didOutputMetadataObjects_fromConnection_(
         except Exception as e:
             print(e)
         main_view['label'].text = (
-            str(
-                sorted(
+            "Finished. Close to check received file. "
+            if decoder.is_finished
+            else 'No length got.'
+            if decoder.length is None
+            else str(
+                list({b'NAME', b'LEN', b'HASH'} - decoder.expecting)
+                + sorted(
                     [
                         int(_)
                         for _ in decoder.expecting
@@ -126,8 +131,6 @@ def captureOutput_didOutputMetadataObjects_fromConnection_(
                     ]
                 )
             )
-            if decoder.length is not None
-            else 'No length got.'
         )
 
 
