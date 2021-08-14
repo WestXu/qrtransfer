@@ -60,7 +60,7 @@ impl Encoder {
     }
 
     fn one_to_html(name: String, payload: String) -> String {
-        "<table style=\"float:left;font-size:30\">".to_string()
+        "<table style=\"float:left;\">".to_string()
             + &format!("<tr><td class=\"qr\">{}</td></tr>", qr(&payload))
             + &format!("<tr><td align=\"center\">{}</td></tr></table>", name)
     }
