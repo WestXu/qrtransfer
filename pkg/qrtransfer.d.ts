@@ -37,6 +37,13 @@ export class Decoder {
 * @returns {string}
 */
   get_progress(): string;
+/**
+* @param {number} width
+* @param {number} height
+* @param {Uint8Array} data
+* @returns {number}
+*/
+  scan(width: number, height: number, data: Uint8Array): number;
 }
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
@@ -52,6 +59,7 @@ export interface InitOutput {
   readonly decoder_get_name: (a: number, b: number) => void;
   readonly decoder_is_finished: (a: number) => number;
   readonly decoder_get_progress: (a: number, b: number) => void;
+  readonly decoder_scan: (a: number, b: number, c: number, d: number, e: number) => number;
   readonly __wbindgen_malloc: (a: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number) => number;
   readonly __wbindgen_add_to_stack_pointer: (a: number) => number;

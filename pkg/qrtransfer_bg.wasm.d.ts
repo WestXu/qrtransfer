@@ -10,6 +10,7 @@ export function decoder_to_base64(a: number, b: number): void;
 export function decoder_get_name(a: number, b: number): void;
 export function decoder_is_finished(a: number): number;
 export function decoder_get_progress(a: number, b: number): void;
+export function decoder_scan(a: number, b: number, c: number, d: number, e: number): number;
 export function __wbindgen_malloc(a: number): number;
 export function __wbindgen_realloc(a: number, b: number, c: number): number;
 export function __wbindgen_add_to_stack_pointer(a: number): number;
