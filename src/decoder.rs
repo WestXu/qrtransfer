@@ -1,4 +1,6 @@
 use super::log;
+use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, RgbImage, RgbaImage};
+use quircs::Quirc;
 use sha1::{Digest, Sha1};
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
@@ -177,6 +179,32 @@ impl Decoder {
                 format!("Expecting: {:?}", expecting)
             }
         }
+    }
+    pub fn scan(&mut self, width: u32, height: u32, data: Vec<u8>) -> usize {
+        let img: RgbaImage = ImageBuffer::from_raw(width, height, data).unwrap();
+        let img_gray = DynamicImage::ImageRgba8(img).into_luma();
+        let mut decoder = Quirc::default();
+        let codes = decoder.identify(
+            img_gray.width() as usize,
+            img_gray.height() as usize,
+            &img_gray,
+        );
+
+        let mut counter = 0;
+        for code in codes {
+            {
+                if let Ok(code) = code {
+                    if let Ok(decoded) = code.decode() {
+                        if let Ok(msg) = String::from_utf8(decoded.payload) {
+                            if self.process_chunk(msg) {
+                                counter += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        counter
     }
 }
 #[test]

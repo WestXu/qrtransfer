@@ -15,12 +15,11 @@
 <body>
     <h1>Send</h1>
     <script type="module">
-        import init, { send, my_set_panic_hook, Decoder, scan_img } from './pkg/qrtransfer.js';
+        import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
         await init();
         my_set_panic_hook();
         window.send = send
         window.Decoder = Decoder
-        window.scan_img = scan_img
     </script>
 
     <input type="file" id="file-selector">
@@ -92,7 +91,10 @@
                 function (stream) {
                     var video = document.getElementById('scan-video');
                     var canvas = document.getElementById('canvas');
+                    var camQrResult = document.getElementById('cam-qr-result');
                     var ctx = canvas.getContext('2d');
+                    var decoder = window.Decoder.new();
+                    window.decoder = decoder;
 
                     video.srcObject = window.stream = stream;
                     video.onloadedmetadata = () => {
@@ -102,10 +104,20 @@
                             canvas.height = video.videoHeight;
                             ctx.drawImage(video, 0, 0);
                             var myImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            window.scan_img(
+                            let counter = decoder.scan(
                                 canvas.width, canvas.height, Array.from(myImageData.data)
-                            )
-                        }, 200);
+                            );
+                            if (counter > 0) {
+                                camQrResult.textContent = window.decoder.get_progress();
+                                for (let i = 0; i < counter; i++) {
+                                    beep();
+                                }
+                                if (decoder.is_finished()) {
+                                    stop_receiving();
+                                    add_download(window.decoder.to_base64());
+                                }
+                            }
+                        }, 40);
                     };
                 }
             )
