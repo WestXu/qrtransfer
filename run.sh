@@ -1,1 +1,2 @@
-wasm-pack build --target web && python -m http.server
+set -e
+bash build.sh && python -m http.server --directory publish

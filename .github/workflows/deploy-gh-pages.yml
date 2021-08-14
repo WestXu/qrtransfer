@@ -18,9 +18,7 @@ jobs:
         with:
           version: "latest"
 
-      - run: wasm-pack build --release --target web --out-dir publish/pkg
-      - run: find ./publish/pkg -name ".gitignore" -delete
-      - run: cp index.html ./publish/
+      - run: bash build.sh
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3

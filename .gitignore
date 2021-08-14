@@ -2,6 +2,7 @@
 **/*.rs.bk
 Cargo.lock
 bin/
-pkg/
 wasm-pack.log
 tmp/
+/publish/*
+!/publish/index.html
