@@ -9,7 +9,9 @@ function download_if_not_exist() {
     if test -f "$file_path"; then
         echo "$file_path exists"
     else
-        curl "https://cdn.jsdelivr.net/npm/qr-scanner/$file" -o "$file_path"
+        url="https://cdn.jsdelivr.net/npm/qr-scanner/$file_name"
+        echo "Downloading $url"
+        curl "$url" -o "$file_path"
         echo "Downloaded $file_path"
     fi
 }
