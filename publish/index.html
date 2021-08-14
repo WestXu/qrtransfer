@@ -67,8 +67,9 @@
 
 
     <video id='scan-video' playsinline autoplay></video>
-    <canvas id='canvas'></canvas>
-    <span id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></span>
+    <canvas id='canvas' style="display: none;"></canvas>
+    <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;">
+    </div>
     <br>
     <button id="start-button" onclick="start_receiving()">Start</button>
     <button id="stop-button" onclick="stop_receiving()">Stop</button>
@@ -98,7 +99,6 @@
 
                     video.srcObject = window.stream = stream;
                     video.onloadedmetadata = () => {
-                        video.play();
                         window.intervalId = setInterval(() => {
                             canvas.width = video.videoWidth;
                             canvas.height = video.videoHeight;
