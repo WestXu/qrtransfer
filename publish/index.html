@@ -15,11 +15,12 @@
 <body>
     <h1>Send</h1>
     <script type="module">
-        import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
+        import init, { send, my_set_panic_hook, Decoder, scan_img } from './pkg/qrtransfer.js';
         await init();
         my_set_panic_hook();
         window.send = send
         window.Decoder = Decoder
+        window.scan_img = scan_img
     </script>
 
     <input type="file" id="file-selector">
@@ -139,6 +140,29 @@
             scanner.stop();
         });
 
+    </script>
+
+    <hr>
+    <h1>Test</h1>
+    <canvas id='canvas'></canvas>
+    <button onclick="test_scan_img()">scan_img</button>
+    <script>
+        function test_scan_img() {
+            var img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.src = './test_qr.png';
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext('2d');
+            img.onload = function () {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                var myImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                window.scan_img(
+                    canvas.width, canvas.height, Array.from(myImageData.data)
+                )
+            };
+        }
     </script>
 </body>
 

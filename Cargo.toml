@@ -12,6 +12,8 @@ qrcode = "*"
 base64 = "*"
 sha-1 = "*"
 indexmap = "*"
+quircs = "*"
+image = "*"
 wasm-bindgen = { version = "*", features = ["serde-serialize"] }
 console_error_panic_hook = "*"
 web-sys = { version = "*", features = [

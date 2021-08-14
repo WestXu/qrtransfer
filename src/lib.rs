@@ -1,5 +1,6 @@
 mod decoder;
 mod encoder;
+mod scan;
 mod utils;
 use utils::{log, set_panic_hook};
 
@@ -29,6 +30,19 @@ pub fn send(file_name: &str, int_array: &JsValue) -> Result<(), JsValue> {
         .expect("should have a qrcode element");
 
     qrcode_div.set_inner_html(&html);
+
+    Ok(())
+}
+
+#[wasm_bindgen]
+pub fn scan_img(width: u32, height: u32, data: &JsValue) -> Result<(), JsValue> {
+    let int_array: Vec<u8> = data.into_serde().unwrap();
+    // log(&format!("data:{:?}", int_array));
+    let decoded_msg = scan::scan(width, height, int_array);
+    decoded_msg
+        .iter()
+        .map(|msg| log(&format!("{}", msg)))
+        .collect::<()>();
 
     Ok(())
 }
