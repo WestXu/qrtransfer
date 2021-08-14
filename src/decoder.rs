@@ -1,5 +1,5 @@
 use super::log;
-use image::{DynamicImage, GenericImage, GenericImageView, ImageBuffer, RgbImage, RgbaImage};
+use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
 use sha1::{Digest, Sha1};
 use std::cmp::Ordering;
@@ -80,7 +80,7 @@ impl Decoder {
         if self.status == Status::Initted {
             return;
         }
-        if self.expecting().len() == 0 {
+        if self.expecting().is_empty() {
             self.status = Status::Finished;
         }
     }
@@ -90,7 +90,7 @@ impl Decoder {
         let mut ordered_iteration = self
             .received_iterations
             .iter()
-            .filter(|(k, v)| !((k == &"NAME") | (k == &"LEN") | (k == &"HASH")))
+            .filter(|(k, _v)| !((k == &"NAME") | (k == &"LEN") | (k == &"HASH")))
             .collect::<Vec<_>>();
 
         ordered_iteration.sort_by(|x, y| {
@@ -101,7 +101,7 @@ impl Decoder {
         log(&format!("{:?}", ordered_iteration));
         ordered_iteration
             .iter()
-            .map(|(k, v)| base64::decode(v).unwrap())
+            .map(|(_k, v)| base64::decode(v).unwrap())
             .collect::<Vec<Vec<u8>>>()
             .concat()
     }
@@ -124,7 +124,7 @@ impl Decoder {
         if self.status == Status::Finished {
             return false;
         }
-        let split = chunk.split(":").collect::<Vec<&str>>();
+        let split = chunk.split(':').collect::<Vec<&str>>();
         let i = split[0];
         let data = split[1];
         if self.received_iterations.contains_key(i) {
@@ -182,7 +182,7 @@ impl Decoder {
     }
     pub fn scan(&mut self, width: u32, height: u32, data: Vec<u8>) -> usize {
         let img: RgbaImage = ImageBuffer::from_raw(width, height, data).unwrap();
-        let img_gray = DynamicImage::ImageRgba8(img).into_luma();
+        let img_gray = DynamicImage::ImageRgba8(img).into_luma8();
         let mut decoder = Quirc::default();
         let codes = decoder.identify(
             img_gray.width() as usize,

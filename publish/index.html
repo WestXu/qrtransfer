@@ -8,8 +8,8 @@
             height: 200 !important;
         }
     </style>
-    <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
-    <script>eruda.init();</script>
+    <!-- <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
+    <script>eruda.init();</script> -->
 </head>
 
 <body>
@@ -68,8 +68,7 @@
 
     <video id='scan-video' playsinline autoplay></video>
     <canvas id='canvas' style="display: none;"></canvas>
-    <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;">
-    </div>
+    <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></div>
     <br>
     <button id="start-button" onclick="start_receiving()">Start</button>
     <button id="stop-button" onclick="stop_receiving()">Stop</button>
@@ -83,10 +82,6 @@
             a.click();
         }
 
-    </script>
-
-
-    <script>
         function start_receiving() {
             navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(
                 function (stream) {
