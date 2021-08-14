@@ -50,6 +50,21 @@
     <hr>
     <h1>Receive</h1>
 
+    <script>
+        let context = new AudioContext();
+        const beep = (freq = 1500, duration = 30, vol = 100) => {
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.connect(gain);
+            oscillator.frequency.value = freq;
+            oscillator.type = "square";
+            gain.connect(context.destination);
+            gain.gain.value = vol * 0.01;
+            oscillator.start(context.currentTime);
+            oscillator.stop(context.currentTime + duration * 0.001);
+        }
+    </script>
+
     <div>
         <b>Device has camera: </b>
         <span id="cam-has-camera"></span>
@@ -99,6 +114,7 @@
         function setResult(result) {
             // console.log("Received", result);
             if (window.decoder.process_chunk(result)) {
+                beep();
                 camQrResult.textContent = window.decoder.get_progress();
             };
             if (window.decoder.is_finished()) {
