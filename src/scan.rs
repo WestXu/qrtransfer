@@ -21,9 +21,20 @@ pub fn scan(width: u32, height: u32, data: Vec<u8>) -> Vec<String> {
     codes
         .into_iter()
         .map(|code| {
-            let code = code.expect("failed to extract qr code");
-            let decoded = code.decode().expect("failed to decode qr code");
-            String::from_utf8(decoded.payload).unwrap()
+            if let Ok(code) = code {
+                if let Ok(decoded) = code.decode() {
+                    match String::from_utf8(decoded.payload) {
+                        Ok(msg) => Some(msg),
+                        Err(_) => None,
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
         })
+        .filter(|msg| msg.is_some())
+        .map(|msg| msg.unwrap())
         .collect()
 }
