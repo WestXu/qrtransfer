@@ -8,25 +8,35 @@
             height: 200 !important;
         }
     </style>
+    <!-- <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
+    <script>eruda.init();</script> -->
 </head>
 
 <body>
+    <h1>Send</h1>
     <script type="module">
-        import init, { run } from './pkg/qrtransfer.js';
+        import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
         await init();
-        window.run = run
+        my_set_panic_hook();
+        window.send = send
+        window.Decoder = Decoder
     </script>
 
     <input type="file" id="file-selector">
     <script>
         const fileSelector = document.getElementById("file-selector")
         function read_file_content(ev) {
+            progress_div = document.getElementById("progress")
+            progress_div.innerText = "Processing..."
+
+
             const reader = new FileReader();
             reader.addEventListener('load', (ev) => {
                 buffer = event.target.result
                 int_array = Array.from(new Uint8Array(buffer))
                 file_name = fileSelector.files[0].name
-                window.run(file_name, int_array)
+                window.send(file_name, int_array)
+                progress_div.innerText = "Finished."
             });
             reader.readAsArrayBuffer(fileSelector.files[0])
         }
@@ -35,6 +45,86 @@
     </script>
     <div id="progress"></div>
     <div id="qrcode"></div>
+
+    <br style="clear:both;">
+    <hr>
+    <h1>Receive</h1>
+
+    <div>
+        <b>Device has camera: </b>
+        <span id="cam-has-camera"></span>
+        <br>
+        <video id="qr-video"></video>
+    </div>
+    <span id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></span>
+    <br>
+    <button id="start-button">Start</button>
+    <button id="stop-button">Stop</button>
+    <button id="test-button" style="display: none;" onclick="test_decoder()">Test</button>
+
+    <script>
+        function add_download(base64_data) {
+            let a = document.createElement("a");
+            a.href = "data:;base64," + base64_data;
+            a.download = window.decoder.get_name();
+            a.innerText = "Download";
+            document.body.appendChild(a);
+            a.click();
+        }
+
+        function test_decoder() {
+            window.decoder = window.Decoder.new()
+
+            window.decoder.process_chunk("NAME:YmluRmlsZS50eHQ=");
+            window.decoder.process_chunk("LEN:2");
+            window.decoder.process_chunk("HASH:23cbdb7dc9c34166abd505f2518152a6c05978d5");
+            window.decoder.process_chunk("1:77u/VHJhbnNmZXIgeW91ciBmaWxlIGZyb20gYW4gYWlyIGdhcHBlZCBjb21wdXRlciB0byBpT1MvaVBob25lL2lQYWQgdXNpbmcgb25seSBxcmNvZGUsIG5vIHdpZmkvdXNiLw==");
+            window.decoder.process_chunk("2:Ymx1ZXRvb3RoIG5lZWRlZC4=");
+
+            console.log("finished: ", window.decoder.is_finished());
+            add_download(window.decoder.to_base64());
+        }
+
+    </script>
+
+
+    <script type="module">
+        import QrScanner from "./qr-scanner.min.js";
+        QrScanner.WORKER_PATH = './qr-scanner-worker.min.js';
+
+        const video = document.getElementById('qr-video');
+        const camHasCamera = document.getElementById('cam-has-camera');
+        const camQrResult = document.getElementById('cam-qr-result');
+
+        function setResult(result) {
+            // console.log("Received", result);
+            if (window.decoder.process_chunk(result)) {
+                camQrResult.textContent = window.decoder.get_progress();
+            };
+            if (window.decoder.is_finished()) {
+                scanner.stop();
+                add_download(window.decoder.to_base64());
+            }
+
+        }
+
+        QrScanner.hasCamera().then(hasCamera => camHasCamera.textContent = hasCamera);
+
+        const scanner = new QrScanner(video, result => setResult(result), error => { });
+
+        window.scanner = scanner;
+
+        document.getElementById('start-button').addEventListener('click', () => {
+            window.decoder = window.Decoder.new();
+            scanner.start();
+        });
+
+        document.getElementById('stop-button').addEventListener('click', () => {
+            scanner.stop();
+        });
+
+    </script>
+</body>
 </body>
 
 </html>
