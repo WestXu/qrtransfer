@@ -42,9 +42,11 @@
         integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
 
     <script type="module">
+        console.log("Initializing wasm...")
         import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
         await init();
         my_set_panic_hook();
+        console.log("Initialized.")
         window.send = send
         window.Decoder = Decoder
     </script>
