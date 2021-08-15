@@ -1,3 +1,4 @@
+use super::compress::{compress, decompress};
 use super::log;
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
@@ -5,7 +6,6 @@ use sha1::{Digest, Sha1};
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
-
 #[derive(PartialEq, Debug)]
 enum Status {
     Initted,
@@ -99,11 +99,13 @@ impl Decoder {
                 .cmp(&y.0.parse::<usize>().unwrap())
         });
         log(&format!("{:?}", ordered_iteration));
-        ordered_iteration
+        let data = ordered_iteration
             .iter()
             .map(|(_k, v)| base64::decode(v).unwrap())
             .collect::<Vec<Vec<u8>>>()
-            .concat()
+            .concat();
+
+        decompress(data)
     }
 
     fn check_integrity(&self) {
