@@ -1,9 +1,9 @@
 use super::log;
+use super::utils::hash;
 mod qr;
 use base64::encode;
 use indexmap::IndexMap;
 use qr::qr;
-use sha1::{Digest, Sha1};
 
 pub struct Encoder {
     file_name: String,
@@ -32,14 +32,7 @@ impl Encoder {
             format!("NAME:{}", encode(&self.file_name)),
         );
         headers.insert("LEN".to_string(), format!("LEN:{}", length));
-        headers.insert(
-            "HASH".to_string(),
-            format!("HASH:{:x}", {
-                let mut hasher = Sha1::new();
-                hasher.update(&self.data);
-                hasher.finalize()
-            }),
-        );
+        headers.insert("HASH".to_string(), format!("HASH:{}", hash(&self.data)));
         headers
     }
 

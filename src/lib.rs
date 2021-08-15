@@ -17,6 +17,8 @@ pub fn send(file_name: &str, int_array: &JsValue) -> Result<(), JsValue> {
     let html = {
         log(file_name);
         let int_array: Vec<u8> = int_array.into_serde().unwrap();
+
+        log("Compressing...");
         let int_array = compress::compress(int_array);
 
         encoder::Encoder::new(file_name.to_string(), int_array).to_html()

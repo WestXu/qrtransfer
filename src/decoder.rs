@@ -1,8 +1,8 @@
-use super::compress::{compress, decompress};
+use super::compress::decompress;
 use super::log;
+use super::utils::hash;
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
-use sha1::{Digest, Sha1};
 use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 use wasm_bindgen::prelude::*;
@@ -105,16 +105,13 @@ impl Decoder {
             .collect::<Vec<Vec<u8>>>()
             .concat();
 
+        log("Decompressing...");
         decompress(data)
     }
 
     fn check_integrity(&self) {
         assert_eq!(self.status, Status::Finished);
-        let final_hash = format!("{:x}", {
-            let mut hasher = Sha1::new();
-            hasher.update(&self.data());
-            hasher.finalize()
-        });
+        let final_hash = hash(&self.data());
 
         let received_hash = self.hash.as_ref().unwrap();
         if received_hash != &final_hash {
