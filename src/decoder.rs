@@ -105,8 +105,12 @@ impl Decoder {
             .collect::<Vec<Vec<u8>>>()
             .concat();
 
+        data
+    }
+
+    fn get_decompressed_data(&self) -> Vec<u8> {
         log("Decompressing...");
-        decompress(data)
+        decompress(self.data())
     }
 
     fn check_integrity(&self) {
@@ -147,7 +151,8 @@ impl Decoder {
 
     pub fn to_base64(&self) -> String {
         self.check_integrity();
-        base64::encode(self.data())
+        let decompressed_data = self.get_decompressed_data();
+        base64::encode(decompressed_data)
     }
 
     pub fn get_name(&self) -> String {
