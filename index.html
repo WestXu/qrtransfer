@@ -1,135 +1,114 @@
-<html>
+<!-- <!doctype html> -->
+<html lang="en">
 
 <head>
-    <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>qrtransfer</title>
     <style>
         svg {
             width: 200 !important;
             height: 200 !important;
         }
+
+        .float {
+            position: fixed;
+            bottom: 140px;
+            right: 140px;
+        }
+
+        /* following 3 to centralize page */
+        #inner-div {
+            margin-left: auto;
+            margin-right: auto;
+            width: 600px
+        }
+
+        #middle-div {
+            display: table-cell;
+            vertical-align: middle
+        }
+
+        #outer-div {
+            display: table;
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 100%;
+        }
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+    <script type="module">
+        console.log("Initializing wasm...")
+        import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
+        await init();
+        my_set_panic_hook();
+        console.log("Initialized.")
+        window.send = send
+        window.Decoder = Decoder
+    </script>
     <!-- <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
     <script>eruda.init();</script> -->
 </head>
 
+
 <body>
-    <h1>Send</h1>
-    <script type="module">
-        import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
-        await init();
-        my_set_panic_hook();
-        window.send = send
-        window.Decoder = Decoder
-    </script>
+    <div id="outer-div">
 
-    <input type="file" id="file-selector">
-    <script>
-        const fileSelector = document.getElementById("file-selector")
-        function read_file_content(ev) {
-            progress_div = document.getElementById("progress")
-            progress_div.innerText = "Processing..."
+        <div id="scroll-check-div" class="form-check form-switch float" style="display: none;">
+            <input class="form-check-input" type="checkbox" id="scroll-check" onclick="toggle_scroll()">
+            <label class="form-check-label" for="scroll-check">Scroll</label>
+        </div>
 
+        <div id="middle-div">
+            <div id="inner-div">
 
-            const reader = new FileReader();
-            reader.addEventListener('load', (ev) => {
-                buffer = event.target.result
-                int_array = Array.from(new Uint8Array(buffer))
-                file_name = fileSelector.files[0].name
-                window.send(file_name, int_array)
-                progress_div.innerText = "Finished."
-            });
-            reader.readAsArrayBuffer(fileSelector.files[0])
-        }
-
-        document.getElementById("file-selector").addEventListener("change", read_file_content)
-    </script>
-    <div id="progress"></div>
-    <div id="qrcode"></div>
-
-    <br style="clear:both;">
-    <hr>
-    <h1>Receive</h1>
-
-    <script>
-        let context = new AudioContext();
-        const beep = (freq = 1500, duration = 30, vol = 100) => {
-            const oscillator = context.createOscillator();
-            const gain = context.createGain();
-            oscillator.connect(gain);
-            oscillator.frequency.value = freq;
-            oscillator.type = "square";
-            gain.connect(context.destination);
-            gain.gain.value = vol * 0.01;
-            oscillator.start(context.currentTime);
-            oscillator.stop(context.currentTime + duration * 0.001);
-        }
-    </script>
+                <h1>qrtransfer</h1>
+                <!-- Nav tabs -->
+                <ul class=" nav nav-tabs" id="myTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="send-tab" data-bs-toggle="tab" data-bs-target="#send"
+                            type="button" role="tab" aria-controls="send" aria-selected="true">Send</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="receive-tab" data-bs-toggle="tab" data-bs-target="#receive"
+                            type="button" role="tab" aria-controls="receive" aria-selected="false">Receive</button>
+                    </li>
+                </ul>
+                <!-- Tab panes -->
+                <div class="tab-content">
+                    <div class="tab-pane active" id="send" role="tabpanel" aria-labelledby="send-tab">
+                        <input type="file" id="file-selector" class="form-control form-control-lg"
+                            onchange="read_file_content()" />
+                        <!-- <input type="file" id="file-selector" data-mdb-file-upload="file-upload" onchange="read_file_content()"> -->
+                        <div id="progress"></div>
+                        <div id="qrcode"></div>
+                        <script src="send.js"></script>
+                    </div>
+                    <div class="tab-pane" id="receive" role="tabpanel" aria-labelledby="receiv-tab">
+                        <video id='scan-video' playsinline autoplay></video>
+                        <canvas id='canvas' style="display: none;"></canvas>
+                        <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></div>
+                        <br>
+                        <button id="start-button" class="btn btn-outline-primary"
+                            onclick="start_receiving()">Start</button>
+                        <button id="stop-button" class="btn btn-outline-danger" onclick="stop_receiving()">Stop</button>
+                        <script src="receive.js"></script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 
-    <video id='scan-video' playsinline autoplay></video>
-    <canvas id='canvas' style="display: none;"></canvas>
-    <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></div>
-    <br>
-    <button id="start-button" onclick="start_receiving()">Start</button>
-    <button id="stop-button" onclick="stop_receiving()">Stop</button>
-    <script>
-        function add_download(base64_data) {
-            let a = document.createElement("a");
-            a.href = "data:;base64," + base64_data;
-            a.download = window.decoder.get_name();
-            a.innerText = "Download";
-            document.body.appendChild(a);
-            a.click();
-        }
-
-        function start_receiving() {
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(
-                function (stream) {
-                    var video = document.getElementById('scan-video');
-                    var canvas = document.getElementById('canvas');
-                    var camQrResult = document.getElementById('cam-qr-result');
-                    var ctx = canvas.getContext('2d');
-                    var decoder = window.Decoder.new();
-                    window.decoder = decoder;
-
-                    video.srcObject = window.stream = stream;
-                    video.onloadedmetadata = () => {
-                        window.intervalId = setInterval(() => {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
-                            ctx.drawImage(video, 0, 0);
-                            var myImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            let counter = decoder.scan(
-                                canvas.width, canvas.height, Array.from(myImageData.data)
-                            );
-                            if (counter > 0) {
-                                camQrResult.textContent = window.decoder.get_progress();
-                                for (let i = 0; i < counter; i++) {
-                                    beep();
-                                }
-                                if (decoder.is_finished()) {
-                                    stop_receiving();
-                                    add_download(window.decoder.to_base64());
-                                }
-                            }
-                        }, 40);
-                    };
-                }
-            )
-        }
-
-        function stop_receiving() {
-            window.stream.getTracks().forEach(function (track) {
-                track.stop();
-            });
-            clearInterval(window.intervalId);
-            var canvas = document.getElementById('canvas');
-            var ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-        }
 
 
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-U1DAWAznBHeqEIlVSCgzq+c9gqGAJn5c/t99JyeKa9xxaYpSvHU5awsuZVVFIhvj" crossorigin="anonymous">
+        </script>
 </body>
 
 </html>

@@ -108,6 +108,13 @@ function getInt32Memory0() {
     }
     return cachegetInt32Memory0;
 }
+
+function passArray8ToWasm0(arg, malloc) {
+    const ptr = malloc(arg.length * 1);
+    getUint8Memory0().set(arg, ptr / 1);
+    WASM_VECTOR_LEN = arg.length;
+    return ptr;
+}
 /**
 */
 export function my_set_panic_hook() {
@@ -133,13 +140,6 @@ export function send(file_name, int_array) {
     } finally {
         heap[stack_pointer++] = undefined;
     }
-}
-
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1);
-    getUint8Memory0().set(arg, ptr / 1);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
 }
 
 function isLikeNone(x) {
