@@ -22,8 +22,11 @@ pub fn send(file_name: &str, int_array: &JsValue) -> Result<(), JsValue> {
 
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
-    let body = document.body().expect("should have a body on document");
 
-    body.set_inner_html(&html);
+    let middle_div = document
+        .get_element_by_id("middle-div")
+        .expect("should have a middle-div element");
+
+    middle_div.set_inner_html(&html);
     Ok(())
 }
