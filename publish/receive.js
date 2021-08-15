@@ -11,6 +11,16 @@ const beep = (freq = 1500, duration = 30, vol = 100) => {
     oscillator.stop(context.currentTime + duration * 0.001);
 }
 
+async function beepN(n) {
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    for (let i = 0; i < n; i++) {
+        beep();
+        await sleep(50);
+    }
+}
+
 function add_download(base64_data) {
     let a = document.createElement("a");
     a.href = "data:;base64," + base64_data;
@@ -42,9 +52,7 @@ function start_receiving() {
                     );
                     if (counter > 0) {
                         camQrResult.textContent = window.decoder.get_progress();
-                        for (let i = 0; i < counter; i++) {
-                            beep();
-                        }
+                        beepN(counter);
                         if (decoder.is_finished()) {
                             stop_receiving();
                             add_download(window.decoder.to_base64());
