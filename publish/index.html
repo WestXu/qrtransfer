@@ -46,9 +46,12 @@
         import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
         await init();
         my_set_panic_hook();
-        console.log("Initialized.")
         window.send = send
         window.Decoder = Decoder
+
+        document.getElementById("spinner").style.display = "none";
+        document.getElementById("main-page").style.display = "block";
+        console.log("Initialized.")
     </script>
     <!-- <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
     <script>eruda.init();</script> -->
@@ -65,38 +68,47 @@
 
         <div id="middle-div">
             <div id="inner-div">
-
-                <h1>qrtransfer</h1>
-                <!-- Nav tabs -->
-                <ul class=" nav nav-tabs" id="myTab" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="send-tab" data-bs-toggle="tab" data-bs-target="#send"
-                            type="button" role="tab" aria-controls="send" aria-selected="true">Send</button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="receive-tab" data-bs-toggle="tab" data-bs-target="#receive"
-                            type="button" role="tab" aria-controls="receive" aria-selected="false">Receive</button>
-                    </li>
-                </ul>
-                <!-- Tab panes -->
-                <div class="tab-content">
-                    <div class="tab-pane active" id="send" role="tabpanel" aria-labelledby="send-tab">
-                        <input type="file" id="file-selector" class="form-control form-control-lg"
-                            onchange="read_file_content()" />
-                        <!-- <input type="file" id="file-selector" data-mdb-file-upload="file-upload" onchange="read_file_content()"> -->
-                        <div id="progress"></div>
-                        <div id="qrcode"></div>
-                        <script src="send.js"></script>
+                <div id="main-page" style="display: none;">
+                    <h1>qrtransfer</h1>
+                    <!-- Nav tabs -->
+                    <ul class=" nav nav-tabs" id="myTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="send-tab" data-bs-toggle="tab" data-bs-target="#send"
+                                type="button" role="tab" aria-controls="send" aria-selected="true">Send</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="receive-tab" data-bs-toggle="tab" data-bs-target="#receive"
+                                type="button" role="tab" aria-controls="receive" aria-selected="false">Receive</button>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="send" role="tabpanel" aria-labelledby="send-tab">
+                            <input type="file" id="file-selector" class="form-control form-control-lg"
+                                onchange="read_file_content()" />
+                            <!-- <input type="file" id="file-selector" data-mdb-file-upload="file-upload" onchange="read_file_content()"> -->
+                            <div id="progress"></div>
+                            <div id="qrcode"></div>
+                            <script src="send.js"></script>
+                        </div>
+                        <div class="tab-pane" id="receive" role="tabpanel" aria-labelledby="receiv-tab">
+                            <video id='scan-video' playsinline autoplay></video>
+                            <canvas id='canvas' style="display: none;"></canvas>
+                            <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></div>
+                            <br>
+                            <button id="start-button" class="btn btn-outline-primary"
+                                onclick="start_receiving()">Start</button>
+                            <button id="stop-button" class="btn btn-outline-danger"
+                                onclick="stop_receiving()">Stop</button>
+                            <script src="receive.js"></script>
+                        </div>
                     </div>
-                    <div class="tab-pane" id="receive" role="tabpanel" aria-labelledby="receiv-tab">
-                        <video id='scan-video' playsinline autoplay></video>
-                        <canvas id='canvas' style="display: none;"></canvas>
-                        <div id="cam-qr-result" style="white-space: pre;word-wrap:break-word;"></div>
-                        <br>
-                        <button id="start-button" class="btn btn-outline-primary"
-                            onclick="start_receiving()">Start</button>
-                        <button id="stop-button" class="btn btn-outline-danger" onclick="stop_receiving()">Stop</button>
-                        <script src="receive.js"></script>
+                </div>
+
+                <div id="spinner">
+                    <div class="d-flex align-items-center">
+                        <strong>Loading...</strong>
+                        <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
                     </div>
                 </div>
             </div>
