@@ -12,6 +12,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          target: wasm32-unknown-unknown
 
       - name: Install trunk
         uses: jetli/trunk-action@v0.1.0
