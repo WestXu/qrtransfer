@@ -20,7 +20,7 @@ jobs:
           version: "latest"
 
       - name: Build
-        run: trunk build --release
+        run: trunk build --release --public-url qrtransfer
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
