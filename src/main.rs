@@ -8,10 +8,6 @@ pub struct QrTransfer {}
 
 #[wasm_bindgen]
 impl QrTransfer {
-    pub fn new() -> Self {
-        Self {}
-    }
-
     #[wasm_bindgen]
     pub fn send(&self, file_name: &str, int_array: &JsValue) -> Result<(), JsValue> {
         let html = {
@@ -42,7 +38,7 @@ fn main() {
     Reflect::set(
         &window,
         &JsValue::from("qrtransfer"),
-        &JsValue::from(QrTransfer::new()),
+        &JsValue::from(QrTransfer {}),
     )
     .unwrap();
 
