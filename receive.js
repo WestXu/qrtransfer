@@ -37,7 +37,7 @@ function start_receiving() {
             var canvas = document.getElementById('canvas');
             var camQrResult = document.getElementById('cam-qr-result');
             var ctx = canvas.getContext('2d');
-            var decoder = window.Decoder.new();
+            var decoder = window.qrtransfer.new_decoder();
             window.decoder = decoder;
 
             video.srcObject = window.stream = stream;

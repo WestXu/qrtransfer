@@ -13,15 +13,16 @@ jobs:
         with:
           toolchain: stable
 
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.3.0
+      - name: Install trunk
+        uses: jetli/trunk-action@v0.1.0
         with:
           version: "latest"
 
-      - run: bash build.sh
+      - name: Build
+        run: trunk build --release
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./publish
+          publish_dir: ./dist

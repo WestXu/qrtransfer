@@ -1,5 +1,4 @@
-use super::log;
-use super::utils::hash;
+use super::utils::{hash, log};
 mod qr;
 use base64::encode;
 use indexmap::IndexMap;

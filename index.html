@@ -41,18 +41,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
 
-    <script type="module">
-        console.log("Initializing wasm...")
-        import init, { send, my_set_panic_hook, Decoder } from './pkg/qrtransfer.js';
-        await init();
-        my_set_panic_hook();
-        window.send = send
-        window.Decoder = Decoder
-
-        document.getElementById("spinner").style.display = "none";
-        document.getElementById("main-page").style.display = "block";
-        console.log("Initialized.")
-    </script>
+    <link data-trunk rel="inline" type="js" href="send.js" />
+    <link data-trunk rel="inline" type="js" href="receive.js" />
+    <link data-trunk rel="rust" />
     <!-- <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
     <script>eruda.init();</script> -->
 </head>
@@ -89,7 +80,6 @@
                             <!-- <input type="file" id="file-selector" data-mdb-file-upload="file-upload" onchange="read_file_content()"> -->
                             <div id="progress"></div>
                             <div id="qrcode"></div>
-                            <script src="send.js"></script>
                         </div>
                         <div class="tab-pane" id="receive" role="tabpanel" aria-labelledby="receiv-tab">
                             <video id='scan-video' playsinline autoplay></video>
@@ -100,7 +90,6 @@
                                 onclick="start_receiving()">Start</button>
                             <button id="stop-button" class="btn btn-outline-danger"
                                 onclick="stop_receiving()">Stop</button>
-                            <script src="receive.js"></script>
                         </div>
                     </div>
                 </div>

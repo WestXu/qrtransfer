@@ -4,7 +4,4 @@ Cargo.lock
 bin/
 wasm-pack.log
 tmp/
-/publish/*
-!/publish/index.html
-!/publish/receive.js
-!/publish/send.js
+dist/

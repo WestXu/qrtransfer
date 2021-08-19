@@ -9,7 +9,7 @@ function read_file_content() {
         buffer = ev.target.result
         int_array = Array.from(new Uint8Array(buffer))
         file_name = fileSelector.files[0].name
-        window.send(file_name, int_array)
+        window.qrtransfer.send(file_name, int_array)
         document.getElementById("scroll-check-div").style.display = "block";
     });
     reader.readAsArrayBuffer(fileSelector.files[0])

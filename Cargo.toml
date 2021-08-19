@@ -4,9 +4,6 @@ version = "0.1.0"
 authors = ["lxu <lxu@junzhiam.com>"]
 edition = "2018"
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
 qrcode = "*"
 base64 = "*"
@@ -25,3 +22,4 @@ web-sys = { version = "*", features = [
     'Window',
     'console',
 ] }
+js-sys = "*"

@@ -1,6 +1,6 @@
 use super::compress::decompress;
-use super::log;
 use super::utils::hash;
+use super::utils::log;
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
 use std::cmp::Ordering;
