@@ -35,7 +35,7 @@ impl Encoder {
         headers
     }
 
-    fn payloads(self) -> IndexMap<String, String> {
+    pub fn payloads(self) -> IndexMap<String, String> {
         let chunks = self.get_chunks();
 
         let mut data_payloads = IndexMap::new();
