@@ -6,8 +6,8 @@ This is a proof-of-concept project, implemented in Rust WebAssembly.
 
 ![Demo](demo.gif)
 
-1. Open [https://westxu.github.io/qrtransfer/](https://westxu.github.io/qrtransfer/) on your PC, select file, zoom/adjust the browser window as you wish. Note that this site is static, which means the file will be processed natively in your browser and won't be uploaded to any server.
-2. Open [https://westxu.github.io/qrtransfer/](https://westxu.github.io/qrtransfer/) on your phone, scan using your camera while scrolling/auto-scrolling your browser until finishing scanning all qrcodes, and then save the reassembled file.
+1. Open [https://qrtransfer.westxu.com](https://westxu.github.io/qrtransfer/) on your PC, select file, zoom/adjust the browser window as you wish. Note that this site is static, which means the file will be processed natively in your browser and won't be uploaded to any server.
+2. Open [https://qrtransfer.westxu.com](https://westxu.github.io/qrtransfer/) on your phone, scan using your camera while scrolling/auto-scrolling your browser until finishing scanning all qrcodes, and then save the reassembled file.
 
 ## Note
 
