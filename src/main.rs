@@ -1,31 +1,18 @@
 use dioxus::prelude::*;
 use js_sys::Reflect;
+use qrtransfer::decoder;
 use qrtransfer::utils::{log, set_panic_hook};
-use qrtransfer::{compress, decoder, encoder};
+
 use wasm_bindgen::prelude::*;
+
+mod send;
+use send::read_file_content;
 
 #[wasm_bindgen]
 pub struct QrTransfer {}
 
 #[wasm_bindgen]
 impl QrTransfer {
-    #[wasm_bindgen]
-    pub fn send(&self, file_name: &str, int_array: &JsValue) -> Result<(), JsValue> {
-        let html = {
-            log(file_name);
-            let int_array: Vec<u8> = int_array.into_serde().unwrap();
-            log("Compressing...");
-            let int_array = compress::compress(int_array);
-            encoder::Encoder::new(file_name.to_string(), int_array).to_html()
-        };
-        let window = web_sys::window().expect("no global `window` exists");
-        let document = window.document().expect("should have a document on window");
-        let middle_div = document
-            .get_element_by_id("middle-div")
-            .expect("should have a middle-div element");
-        middle_div.set_inner_html(&html);
-        Ok(())
-    }
     #[wasm_bindgen]
     pub fn new_decoder(&self) -> Result<decoder::Decoder, JsValue> {
         Ok(decoder::Decoder::new())
@@ -106,7 +93,7 @@ fn app(cx: Scope) -> Element {
                                 input {
                                     class: "form-control form-control-lg",
                                     id: "file-selector",
-                                    "onchange": "read_file_content()",
+                                    onchange: move |_| read_file_content(),
                                     r#type: "file",
                                 }
                                 div {

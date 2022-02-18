@@ -1,20 +1,3 @@
-function read_file_content() {
-    const fileSelector = document.getElementById("file-selector")
-    progress_div = document.getElementById("progress")
-    progress_div.innerText = "Processing..."
-
-
-    const reader = new FileReader();
-    reader.addEventListener('load', (ev) => {
-        buffer = ev.target.result
-        int_array = Array.from(new Uint8Array(buffer))
-        file_name = fileSelector.files[0].name
-        window.qrtransfer.send(file_name, int_array)
-        document.getElementById("scroll-check-div").style.display = "block";
-    });
-    reader.readAsArrayBuffer(fileSelector.files[0])
-}
-
 function scroll() {
     window.scrollBy({
         top: 200,
