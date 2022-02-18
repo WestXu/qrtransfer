@@ -4,6 +4,9 @@ use qrtransfer::{compress, encoder};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+mod scroll;
+pub use scroll::toggle_scroll;
+
 fn send(file_name: String, int_array: Vec<u8>) {
     let html = {
         log("Compressing...");
@@ -17,6 +20,11 @@ fn send(file_name: String, int_array: Vec<u8>) {
         .get_element_by_id("middle-div")
         .expect("should have a middle-div element");
     middle_div.set_inner_html(&html);
+    document
+        .get_element_by_id("scroll-check-div")
+        .unwrap()
+        .set_attribute("style", "display: block;")
+        .unwrap();
 }
 
 pub fn read_file_content() {

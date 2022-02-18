@@ -22,6 +22,8 @@ web-sys = { version = "*", features = [
     'FileReader',
     'File',
     'ProgressEvent',
+    'ScrollToOptions',
+    'ScrollBehavior',
     'FileList',
     'Node',
     'Window',

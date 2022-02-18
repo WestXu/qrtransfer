@@ -30,7 +30,7 @@ fn app(cx: Scope) -> Element {
                 input {
                     class: "form-check-input",
                     id: "scroll-check",
-                    "onclick": "toggle_scroll()",
+                    onclick: move |_| send::toggle_scroll(),
                     r#type: "checkbox",
                 }
                 label {
