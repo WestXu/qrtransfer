@@ -1,7 +1,6 @@
 pub mod encoder;
 mod scroll;
 
-use crate::compress;
 use crate::utils::log;
 
 use wasm_bindgen::prelude::*;
@@ -10,11 +9,7 @@ use wasm_bindgen::JsCast;
 pub use scroll::toggle_scroll;
 
 fn send(file_name: String, int_array: Vec<u8>) {
-    let html = {
-        log("Compressing...");
-        let int_array = compress::compress(int_array);
-        encoder::Encoder::new(file_name, int_array).to_html()
-    };
+    let html = encoder::Encoder::new(file_name, int_array).to_html();
 
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
