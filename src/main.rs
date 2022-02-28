@@ -147,7 +147,6 @@ fn app(cx: Scope) -> Element {
 }
 
 fn main() {
-    log("Initializing wasm...");
     set_panic_hook();
     let window = web_sys::window().expect("no global `window` exists");
     Reflect::set(
@@ -157,7 +156,6 @@ fn main() {
     )
     .unwrap();
 
-    log("Wasm initialized.");
-
     dioxus::web::launch(app);
+    log("Wasm initialized.");
 }
