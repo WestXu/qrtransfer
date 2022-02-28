@@ -1,10 +1,12 @@
-use qrtransfer::utils::log;
-use qrtransfer::{compress, encoder};
+pub mod encoder;
+mod scroll;
+
+use crate::compress;
+use crate::utils::log;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-mod scroll;
 pub use scroll::toggle_scroll;
 
 fn send(file_name: String, int_array: Vec<u8>) {

@@ -1,12 +1,9 @@
 use dioxus::prelude::*;
 use js_sys::Reflect;
-use qrtransfer::decoder;
-use qrtransfer::utils::{log, set_panic_hook};
-
 use wasm_bindgen::prelude::*;
 
-mod send;
-use send::read_file_content;
+use qrtransfer::utils::{log, set_panic_hook};
+use qrtransfer::{decoder, send};
 
 #[wasm_bindgen]
 pub struct QrTransfer {}
@@ -93,7 +90,7 @@ fn app(cx: Scope) -> Element {
                                 input {
                                     class: "form-control form-control-lg",
                                     id: "file-selector",
-                                    onchange: move |_| read_file_content(),
+                                    onchange: move |_| send::read_file_content(),
                                     r#type: "file",
                                 }
                                 div {

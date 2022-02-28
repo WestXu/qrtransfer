@@ -1,6 +1,6 @@
 pub mod compress;
 pub mod decoder;
-pub mod encoder;
+pub mod send;
 pub mod utils;
 
 #[test]
@@ -11,7 +11,7 @@ fn test_integration() {
     let int_array = Vec::from(file_content.as_bytes());
     let int_array = compress::compress(int_array);
 
-    let encoder = encoder::Encoder::new(file_name.to_string(), int_array);
+    let encoder = send::encoder::Encoder::new(file_name.to_string(), int_array);
 
     let mut decoder = decoder::Decoder::new();
     for (_name, payload) in encoder.payloads() {
