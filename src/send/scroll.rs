@@ -1,4 +1,3 @@
-use js_sys::Reflect;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
@@ -29,20 +28,16 @@ fn stop_scroll(scroll_id: i32) {
         .clear_interval_with_handle(scroll_id)
 }
 
-pub fn toggle_scroll(scroll_id: i32, set_scroll_id: &dioxus::prelude::UseState<i32>) {
-    let v = Reflect::get(
-        &web_sys::window()
-            .unwrap()
-            .document()
-            .unwrap()
-            .get_element_by_id("scroll-check")
-            .unwrap(),
-        &JsValue::from("checked"),
-    )
-    .unwrap()
-    .as_bool()
-    .unwrap();
-    match v {
+pub fn toggle_scroll(
+    scrolling: bool,
+    set_scrolling: &dioxus::prelude::UseState<bool>,
+    scroll_id: i32,
+    set_scroll_id: &dioxus::prelude::UseState<i32>,
+) {
+    let scrolling = !scrolling;
+    set_scrolling(scrolling);
+
+    match scrolling {
         true => set_scroll_id(start_scroll()),
         false => stop_scroll(scroll_id),
     }
