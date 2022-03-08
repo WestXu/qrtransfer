@@ -10,7 +10,7 @@ fn scroll() {
     );
 }
 
-fn start_scroll() {
+fn start_scroll() -> i32 {
     let scroll_cb = Closure::wrap(Box::new(scroll) as Box<dyn Fn()>);
     let scroll_id = web_sys::window()
         .unwrap()
@@ -20,27 +20,16 @@ fn start_scroll() {
         )
         .unwrap();
     scroll_cb.forget();
-    Reflect::set(
-        &web_sys::window().unwrap(),
-        &JsValue::from("scrollIntervalId"),
-        &JsValue::from(scroll_id),
-    )
-    .unwrap();
+    scroll_id
 }
 
-fn stop_scroll() {
-    web_sys::window().unwrap().clear_interval_with_handle(
-        Reflect::get(
-            &web_sys::window().unwrap(),
-            &JsValue::from("scrollIntervalId"),
-        )
+fn stop_scroll(scroll_id: i32) {
+    web_sys::window()
         .unwrap()
-        .as_f64()
-        .unwrap() as i32,
-    )
+        .clear_interval_with_handle(scroll_id)
 }
 
-pub fn toggle_scroll() {
+pub fn toggle_scroll(scroll_id: i32, set_scroll_id: &dioxus::prelude::UseState<i32>) {
     let v = Reflect::get(
         &web_sys::window()
             .unwrap()
@@ -54,7 +43,7 @@ pub fn toggle_scroll() {
     .as_bool()
     .unwrap();
     match v {
-        true => start_scroll(),
-        false => stop_scroll(),
+        true => set_scroll_id(start_scroll()),
+        false => stop_scroll(scroll_id),
     }
 }
