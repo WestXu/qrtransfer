@@ -48,8 +48,18 @@
 </head>
 
 <script>console.log("Initializing wasm...");</script>
+
 <body>
     <div id="main"> </div>
+    <div id="spinner">
+        <div class="d-flex align-items-center">
+            <strong>Loading...</strong>
+            <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous">
+    </script>
 </body>
 
 </html>

@@ -138,11 +138,6 @@ fn app(cx: Scope) -> Element {
                 }
             }
         }
-        script {
-            crossorigin: "anonymous",
-            src: "https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js",
-            ""
-        }
     })
 }
 
@@ -155,6 +150,13 @@ fn main() {
         &JsValue::from(QrTransfer {}),
     )
     .unwrap();
+
+    let document = window.document().expect("should have a document on window");
+    document
+        .get_element_by_id("spinner")
+        .unwrap()
+        .set_attribute("style", "display: none;")
+        .unwrap();
 
     dioxus::web::launch(app);
     log("Wasm initialized.");
