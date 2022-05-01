@@ -13,14 +13,16 @@ fn test_integration() {
 
     let encoder = encoder::Encoder::new(file_name.to_string(), int_array);
 
-    let mut decoder = decoder::Decoder::new();
+    let mut decoder = decoder::DecoderFactory::new();
     for (_name, payload) in encoder.payloads() {
         decoder.process_chunk(payload);
     }
 
-    let decoded_data = base64::decode(decoder.to_base64()).unwrap();
+    let res = decoder.get_finished();
+
+    let decoded_data = base64::decode(res.to_base64()).unwrap();
     let decoded_data = String::from_utf8(decoded_data).unwrap();
 
-    assert_eq!(file_name, decoder.get_name());
+    assert_eq!(file_name, res.file_name);
     assert_eq!(file_content, decoded_data);
 }
