@@ -16,6 +16,7 @@ struct Initted {
     received_iterations: HashMap<String, String>,
     file_name: Option<String>,
     hash: Option<String>,
+    length: Option<usize>,
 }
 
 struct Started {
@@ -23,7 +24,6 @@ struct Started {
     received_iterations: HashMap<String, String>,
     file_name: Option<String>,
     hash: Option<String>,
-    length: usize,
 }
 
 pub struct Finished {
@@ -61,13 +61,15 @@ impl Default for Decoder<Initted> {
                 received_iterations: HashMap::new(),
                 file_name: None,
                 hash: None,
+                length: None,
             },
         }
     }
 }
 
-impl Decoder<Initted> {
-    pub fn start(self, length: usize) -> Decoder<Started> {
+impl From<Decoder<Initted>> for Decoder<Started> {
+    fn from(val: Decoder<Initted>) -> Decoder<Started> {
+        let length = val.state.length.unwrap();
         log(&format!("[*] The message will come in {} parts", length));
         Decoder {
             state: Started {
@@ -81,10 +83,9 @@ impl Decoder<Initted> {
                     }
                     iterations
                 },
-                received_iterations: self.state.received_iterations,
-                file_name: self.state.file_name,
-                hash: self.state.hash,
-                length,
+                received_iterations: val.state.received_iterations,
+                file_name: val.state.file_name,
+                hash: val.state.hash,
             },
         }
     }
@@ -99,28 +100,20 @@ impl Default for Decoder<Started> {
                 received_iterations: HashMap::new(),
                 file_name: None,
                 hash: None,
-                length: 0,
             },
         }
     }
 }
 
-impl Decoder<Started> {
-    fn expecting(&self) -> HashSet<&String> {
-        self.state
-            .expected_iterations
-            .iter()
-            .filter(|s| !self.state.received_iterations.contains_key(*s))
-            .collect()
-    }
-
-    fn finish(self) -> Decoder<Finished> {
+impl From<Decoder<Started>> for Decoder<Finished> {
+    fn from(val: Decoder<Started>) -> Decoder<Finished> {
+        assert!(val.check_finished(), "Incomplete data.");
         Decoder {
             state: Finished {
-                file_name: self.state.file_name.unwrap(),
-                hash: self.state.hash.unwrap(),
+                file_name: val.state.file_name.unwrap(),
+                hash: val.state.hash.unwrap(),
                 data: {
-                    let mut ordered_iteration = self
+                    let mut ordered_iteration = val
                         .state
                         .received_iterations
                         .iter()
@@ -142,8 +135,18 @@ impl Decoder<Started> {
             },
         }
     }
+}
 
-    fn check_finished(&mut self) -> bool {
+impl Decoder<Started> {
+    fn expecting(&self) -> HashSet<&String> {
+        self.state
+            .expected_iterations
+            .iter()
+            .filter(|s| !self.state.received_iterations.contains_key(*s))
+            .collect()
+    }
+
+    fn check_finished(&self) -> bool {
         self.expecting().is_empty()
     }
 }
@@ -252,15 +255,14 @@ impl DecoderFactory {
 
         if let DecoderWrapper::Initted(val) = &mut self.decoder {
             if i == "LEN" {
-                self.decoder = DecoderWrapper::Started(
-                    take(val).start(data.to_string().parse::<usize>().unwrap()),
-                )
+                val.state.length = Some(data.to_string().parse::<usize>().unwrap());
+                self.decoder = DecoderWrapper::Started(take(val).into())
             }
         }
 
         if let DecoderWrapper::Started(val) = &mut self.decoder {
             if val.check_finished() {
-                self.decoder = DecoderWrapper::Finished(take(val).finish())
+                self.decoder = DecoderWrapper::Finished(take(val).into())
             }
         }
 
