@@ -4,35 +4,354 @@ use super::utils::log;
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::mem::take;
 use wasm_bindgen::prelude::*;
 
-struct Decoder<S> {
-    state: S,
+enum State {
+    Initted {
+        received_msgs: HashSet<Msg>,
+        file_name: Option<String>,
+        hash: Option<String>,
+    },
+    Started {
+        expected_iterations: HashSet<String>,
+        received_msgs: HashSet<Msg>,
+        file_name: Option<String>,
+        hash: Option<String>,
+        length: usize,
+    },
+    Finished {
+        file_name: String,
+        hash: String,
+        data: Vec<u8>,
+    },
 }
 
-struct Initted {
-    received_iterations: HashMap<String, String>,
-    file_name: Option<String>,
-    hash: Option<String>,
-    length: Option<usize>,
+#[derive(Debug, PartialEq, Eq, Hash)]
+enum Msg {
+    Length(usize),
+    Name(String),
+    Hash(String),
+    Piece(String, String),
 }
 
-struct Started {
-    expected_iterations: HashSet<String>,
-    received_iterations: HashMap<String, String>,
-    file_name: Option<String>,
-    hash: Option<String>,
+impl Msg {
+    fn new(chunk: String) -> Self {
+        let split = chunk.split(':').collect::<Vec<&str>>();
+        let i = split[0];
+        let data = split[1];
+        match i {
+            "LEN" => Msg::Length(data.to_string().parse::<usize>().unwrap()),
+            "NAME" => Msg::Name(data.to_string()),
+            "HASH" => Msg::Hash(data.to_string()),
+            _ => Msg::Piece(i.to_string(), data.to_string()),
+        }
+    }
 }
 
-pub struct Finished {
+fn assemble_data(msgs: HashSet<Msg>) -> Vec<u8> {
+    let mut ordered_iteration = msgs
+        .into_iter()
+        .filter(|msg| matches!(msg, Msg::Piece(_, _)))
+        .collect::<Vec<Msg>>();
+    ordered_iteration.sort_by(|x, y| {
+        if let Msg::Piece(xi, _) = x {
+            if let Msg::Piece(yi, _) = y {
+                xi.parse::<usize>()
+                    .unwrap()
+                    .cmp(&yi.parse::<usize>().unwrap())
+            } else {
+                Ordering::Greater
+            }
+        } else {
+            Ordering::Greater
+        }
+    });
+    log(&format!("{:?}", ordered_iteration));
+    let data = ordered_iteration
+        .iter()
+        .map(|msg| {
+            if let Msg::Piece(_, data) = msg {
+                base64::decode(data).unwrap()
+            } else {
+                panic!("")
+            }
+        })
+        .collect::<Vec<Vec<u8>>>()
+        .concat();
+    data
+}
+
+impl Default for State {
+    fn default() -> Self {
+        State::Initted {
+            received_msgs: HashSet::new(),
+            file_name: None,
+            hash: None,
+        }
+    }
+}
+
+impl State {
+    fn expecting(&self) -> Option<HashSet<&String>> {
+        if let State::Started {
+            expected_iterations,
+            received_msgs,
+            ..
+        } = self
+        {
+            let received_iterations = received_msgs
+                .iter()
+                .map(|it| match it {
+                    Msg::Hash(_) => "HASH",
+                    Msg::Name(_) => "NAME",
+                    Msg::Length(_) => "LEN",
+                    Msg::Piece(i, _) => i,
+                })
+                .collect::<HashSet<&str>>();
+            Some(
+                expected_iterations
+                    .iter()
+                    .filter(|s| !received_iterations.contains(s as &str)) // what the hell is this... why can't just s.
+                    .collect(),
+            )
+        } else {
+            None
+        }
+    }
+    pub fn get_progress(&self) -> String {
+        use self::State::*;
+
+        match self {
+            Initted { .. } => "No LEN yet.".to_string(),
+            Finished { .. } => "Finished.".to_string(),
+            Started { .. } => {
+                let mut expecting = self
+                    .expecting()
+                    .unwrap()
+                    .into_iter()
+                    .collect::<Vec<&String>>();
+                expecting.sort_by(|x, y| {
+                    if (x == &"NAME") | (x == &"LEN") | (x == &"HASH") {
+                        Ordering::Less
+                    } else if (y == &"NAME") | (y == &"LEN") | (y == &"HASH") {
+                        Ordering::Greater
+                    } else {
+                        x.parse::<usize>()
+                            .unwrap()
+                            .cmp(&y.parse::<usize>().unwrap())
+                    }
+                });
+                format!("Expecting: {:?}", expecting)
+            }
+        }
+    }
+    fn check_finished(&self) -> bool {
+        if let Some(its) = self.expecting() {
+            its.is_empty()
+        } else {
+            false
+        }
+    }
+    fn insert_msg(received_msgs: &mut HashSet<Msg>, msg: Msg) -> bool {
+        if received_msgs.contains(&msg) {
+            return false;
+        }
+        received_msgs.insert(msg);
+        true
+    }
+    fn update(&mut self, msg: Msg) -> bool {
+        use self::Msg::*;
+        use self::State::*;
+
+        match (self, msg) {
+            (Finished { .. }, _) => false,
+            (
+                Initted {
+                    received_msgs,
+                    file_name,
+                    ..
+                }
+                | Started {
+                    received_msgs,
+                    file_name,
+                    ..
+                },
+                Name(n),
+            ) => {
+                let inserted = State::insert_msg(received_msgs, Name(n.clone()));
+                if inserted {
+                    log(&format!("[*] File name: {}", n));
+                    *file_name = Some(String::from_utf8(base64::decode(n).unwrap()).unwrap());
+                }
+                inserted
+            }
+            (
+                Initted {
+                    received_msgs,
+                    file_name: _,
+                    hash,
+                }
+                | Started {
+                    received_msgs,
+                    file_name: _,
+                    hash,
+                    ..
+                },
+                Hash(h),
+            ) => {
+                let inserted = State::insert_msg(received_msgs, Hash(h.clone()));
+                if inserted {
+                    log(&format!("[*] Hash {}", h));
+                    *hash = Some(h);
+                }
+                inserted
+            }
+            (Initted { received_msgs, .. } | Started { received_msgs, .. }, msg) => {
+                State::insert_msg(received_msgs, msg)
+            }
+        }
+    }
+    pub fn next(self, msg: Msg) -> (State, bool) {
+        use self::Msg::*;
+        use self::State::*;
+
+        match (self, msg) {
+            (
+                Initted {
+                    received_msgs,
+                    file_name,
+                    hash,
+                },
+                Length(length),
+            ) => {
+                let mut state = Started {
+                    expected_iterations: {
+                        let mut iterations = HashSet::new();
+                        iterations.insert("NAME".to_string());
+                        iterations.insert("LEN".to_string());
+                        iterations.insert("HASH".to_string());
+                        for i in 1..=length {
+                            iterations.insert(i.to_string());
+                        }
+                        iterations
+                    },
+                    received_msgs,
+                    file_name,
+                    hash,
+                    length,
+                };
+                let updated = state.update(Length(length));
+                (state, updated)
+            }
+            (
+                Initted {
+                    received_msgs,
+                    file_name,
+                    hash,
+                },
+                msg,
+            ) => {
+                let mut state = Initted {
+                    received_msgs,
+                    file_name,
+                    hash,
+                };
+                let updated = state.update(msg);
+                (state, updated)
+            }
+            (
+                Started {
+                    expected_iterations,
+                    received_msgs,
+                    file_name,
+                    hash,
+                    length,
+                },
+                msg,
+            ) => {
+                // the following is insanely wordy...
+                let mut state = Started {
+                    expected_iterations,
+                    received_msgs,
+                    file_name,
+                    hash,
+                    length,
+                };
+                if state.update(msg) & (state.check_finished()) {
+                    if let Started {
+                        expected_iterations: _,
+                        received_msgs,
+                        file_name,
+                        hash,
+                        length: _,
+                    } = state
+                    {
+                        (
+                            Finished {
+                                file_name: file_name.unwrap(),
+                                hash: hash.unwrap(),
+                                data: assemble_data(received_msgs),
+                            },
+                            true,
+                        )
+                    } else {
+                        panic!()
+                    }
+                } else if let Started {
+                    expected_iterations,
+                    received_msgs,
+                    file_name,
+                    hash,
+                    length,
+                } = state
+                {
+                    (
+                        Started {
+                            expected_iterations,
+                            received_msgs,
+                            file_name,
+                            hash,
+                            length,
+                        },
+                        false,
+                    )
+                } else {
+                    panic!()
+                }
+            }
+            (val @ Finished { .. }, _) => (val, false),
+        }
+    }
+}
+
+pub struct Output {
     pub file_name: String,
-    hash: String,
-    data: Vec<u8>,
+    pub hash: String,
+    pub data: Vec<u8>,
 }
 
-impl Finished {
+impl From<State> for Output {
+    fn from(state: State) -> Self {
+        if let State::Finished {
+            file_name,
+            hash,
+            data,
+        } = state
+        {
+            Output {
+                file_name,
+                hash,
+                data,
+            }
+        } else {
+            panic!("Unfinished.")
+        }
+    }
+}
+
+impl Output {
     fn get_decompressed_data(&self) -> Vec<u8> {
         log("Decompressing...");
         decompress(self.data.clone())
@@ -54,222 +373,20 @@ impl Finished {
     }
 }
 
-impl Default for Decoder<Initted> {
-    fn default() -> Self {
-        Decoder {
-            state: Initted {
-                received_iterations: HashMap::new(),
-                file_name: None,
-                hash: None,
-                length: None,
-            },
-        }
-    }
-}
-
-impl From<Decoder<Initted>> for Decoder<Started> {
-    fn from(val: Decoder<Initted>) -> Decoder<Started> {
-        let length = val.state.length.unwrap();
-        log(&format!("[*] The message will come in {} parts", length));
-        Decoder {
-            state: Started {
-                expected_iterations: {
-                    let mut iterations = HashSet::new();
-                    iterations.insert("NAME".to_string());
-                    iterations.insert("LEN".to_string());
-                    iterations.insert("HASH".to_string());
-                    for i in 1..=length {
-                        iterations.insert(i.to_string());
-                    }
-                    iterations
-                },
-                received_iterations: val.state.received_iterations,
-                file_name: val.state.file_name,
-                hash: val.state.hash,
-            },
-        }
-    }
-}
-
-impl Default for Decoder<Started> {
-    // for take to work
-    fn default() -> Self {
-        Decoder {
-            state: Started {
-                expected_iterations: HashSet::new(),
-                received_iterations: HashMap::new(),
-                file_name: None,
-                hash: None,
-            },
-        }
-    }
-}
-
-impl From<Decoder<Started>> for Decoder<Finished> {
-    fn from(val: Decoder<Started>) -> Decoder<Finished> {
-        assert!(val.check_finished(), "Incomplete data.");
-        Decoder {
-            state: Finished {
-                file_name: val.state.file_name.unwrap(),
-                hash: val.state.hash.unwrap(),
-                data: {
-                    let mut ordered_iteration = val
-                        .state
-                        .received_iterations
-                        .iter()
-                        .filter(|(k, _v)| !((k == &"NAME") | (k == &"LEN") | (k == &"HASH")))
-                        .collect::<Vec<_>>();
-                    ordered_iteration.sort_by(|x, y| {
-                        x.0.parse::<usize>()
-                            .unwrap()
-                            .cmp(&y.0.parse::<usize>().unwrap())
-                    });
-                    log(&format!("{:?}", ordered_iteration));
-                    let data = ordered_iteration
-                        .iter()
-                        .map(|(_k, v)| base64::decode(v).unwrap())
-                        .collect::<Vec<Vec<u8>>>()
-                        .concat();
-                    data
-                },
-            },
-        }
-    }
-}
-
-impl Decoder<Started> {
-    fn expecting(&self) -> HashSet<&String> {
-        self.state
-            .expected_iterations
-            .iter()
-            .filter(|s| !self.state.received_iterations.contains_key(*s))
-            .collect()
-    }
-
-    fn check_finished(&self) -> bool {
-        self.expecting().is_empty()
-    }
-}
-
-enum DecoderWrapper {
-    Initted(Decoder<Initted>),
-    Started(Decoder<Started>),
-    Finished(Decoder<Finished>),
-}
-
 #[wasm_bindgen]
-pub struct DecoderFactory {
-    decoder: DecoderWrapper,
+#[derive(Default)]
+pub struct Decoder {
+    state: State,
 }
-
-impl DecoderFactory {
+impl Decoder {
     pub fn new() -> Self {
-        DecoderFactory {
-            decoder: DecoderWrapper::Initted(Decoder::default()),
-        }
+        Self::default()
     }
-
-    fn set_name(&mut self, name: String) {
-        log(&format!("[*] File name: {}", name));
-        match &mut self.decoder {
-            DecoderWrapper::Initted(val) => {
-                val.state.file_name = Some(name);
-            }
-            DecoderWrapper::Started(val) => {
-                val.state.file_name = Some(name);
-            }
-            DecoderWrapper::Finished(_) => {
-                panic!("Decoder is already finished.")
-            }
-        };
-    }
-
-    fn set_hash(&mut self, hash: String) {
-        log(&format!("[*] Hash {}", hash));
-        match &mut self.decoder {
-            DecoderWrapper::Initted(val) => {
-                val.state.hash = Some(hash);
-            }
-            DecoderWrapper::Started(val) => {
-                val.state.hash = Some(hash);
-            }
-            DecoderWrapper::Finished(_) => {
-                panic!("Decoder is already finished.")
-            }
-        };
-    }
-
-    pub fn get_progress(&self) -> String {
-        match &self.decoder {
-            DecoderWrapper::Initted(_) => "No LEN yet.".to_string(),
-            DecoderWrapper::Finished(_) => "Finished.".to_string(),
-            DecoderWrapper::Started(val) => {
-                let mut expecting = val.expecting().into_iter().collect::<Vec<&String>>();
-                expecting.sort_by(|x, y| {
-                    if (x == &"NAME") | (x == &"LEN") | (x == &"HASH") {
-                        Ordering::Less
-                    } else if (y == &"NAME") | (y == &"LEN") | (y == &"HASH") {
-                        Ordering::Greater
-                    } else {
-                        x.parse::<usize>()
-                            .unwrap()
-                            .cmp(&y.parse::<usize>().unwrap())
-                    }
-                });
-                format!("Expecting: {:?}", expecting)
-            }
-        }
-    }
-
     pub fn process_chunk(&mut self, chunk: String) -> bool {
-        let split = chunk.split(':').collect::<Vec<&str>>();
-        let i = split[0];
-        let data = split[1];
-
-        match &mut self.decoder {
-            DecoderWrapper::Finished(_) => {
-                return false;
-            }
-            DecoderWrapper::Initted(val) => {
-                if val.state.received_iterations.contains_key(i) {
-                    return false;
-                }
-                val.state
-                    .received_iterations
-                    .insert(i.to_string(), data.to_string());
-            }
-            DecoderWrapper::Started(val) => {
-                if val.state.received_iterations.contains_key(i) {
-                    return false;
-                }
-                val.state
-                    .received_iterations
-                    .insert(i.to_string(), data.to_string());
-            }
-        }
-        match i {
-            "NAME" => self.set_name(String::from_utf8(base64::decode(data).unwrap()).unwrap()),
-            "HASH" => self.set_hash(data.to_string()),
-            _ => (),
-        }
-
-        if let DecoderWrapper::Initted(val) = &mut self.decoder {
-            if i == "LEN" {
-                val.state.length = Some(data.to_string().parse::<usize>().unwrap());
-                self.decoder = DecoderWrapper::Started(take(val).into())
-            }
-        }
-
-        if let DecoderWrapper::Started(val) = &mut self.decoder {
-            if val.check_finished() {
-                self.decoder = DecoderWrapper::Finished(take(val).into())
-            }
-        }
-
-        log(&format!("processed {}", chunk));
-        true
+        let (state, updated) = take(&mut self.state).next(Msg::new(chunk));
+        self.state = state;
+        updated
     }
-
     pub fn scan(&mut self, width: u32, height: u32, data: Vec<u8>) -> usize {
         let img: RgbaImage = ImageBuffer::from_raw(width, height, data).unwrap();
         let img_gray = DynamicImage::ImageRgba8(img).into_luma8();
@@ -296,19 +413,20 @@ impl DecoderFactory {
         }
         counter
     }
-
-    pub fn get_finished(self) -> Finished {
-        if let DecoderWrapper::Finished(val) = self.decoder {
-            val.state
-        } else {
-            panic!("Should be finished by now.")
-        }
+    pub fn get_progress(self) -> String {
+        self.state.get_progress()
+    }
+    pub fn get_finished(self) -> Output {
+        self.state.into()
+    }
+    pub fn is_finished(self) -> bool {
+        matches!(self.state, State::Finished { .. })
     }
 }
 
 #[test]
 fn test_decoder() {
-    let mut decoder = DecoderFactory::new();
+    let mut decoder = Decoder::new();
 
     decoder.process_chunk("NAME:dGVzdF9xcnRyYW5zZmVyLnR4dA==".to_string());
     decoder.process_chunk("LEN:2".to_string());

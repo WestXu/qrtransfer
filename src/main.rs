@@ -26,8 +26,8 @@ impl QrTransfer {
         Ok(())
     }
     #[wasm_bindgen]
-    pub fn new_decoder(&self) -> Result<decoder::DecoderFactory, JsValue> {
-        Ok(decoder::DecoderFactory::new())
+    pub fn new_decoder(&self) -> Result<decoder::Decoder, JsValue> {
+        Ok(decoder::Decoder::new())
     }
 }
 

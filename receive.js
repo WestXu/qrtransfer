@@ -55,7 +55,7 @@ function start_receiving() {
                         beepN(counter);
                         if (decoder.is_finished()) {
                             stop_receiving();
-                            add_download(window.decoder.to_base64());
+                            add_download(window.decoder.get_finished().to_base64());
                         }
                     }
                 }, 40);
