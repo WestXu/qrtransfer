@@ -115,33 +115,6 @@ impl State {
             None
         }
     }
-    pub fn get_progress(&self) -> String {
-        use self::State::*;
-
-        match self {
-            Initted { .. } => "No LEN yet.".to_string(),
-            Finished { .. } => "Finished.".to_string(),
-            Started { .. } => {
-                let mut expecting = self
-                    .expecting()
-                    .unwrap()
-                    .into_iter()
-                    .collect::<Vec<&String>>();
-                expecting.sort_by(|x, y| {
-                    if (x == &"NAME") | (x == &"LEN") | (x == &"HASH") {
-                        Ordering::Less
-                    } else if (y == &"NAME") | (y == &"LEN") | (y == &"HASH") {
-                        Ordering::Greater
-                    } else {
-                        x.parse::<usize>()
-                            .unwrap()
-                            .cmp(&y.parse::<usize>().unwrap())
-                    }
-                });
-                format!("Expecting: {:?}", expecting)
-            }
-        }
-    }
     fn check_finished(&self) -> bool {
         if let Some(its) = self.expecting() {
             its.is_empty()
@@ -408,8 +381,33 @@ impl Decoder {
         }
         counter
     }
-    pub fn get_progress(self) -> String {
-        self.state.get_progress()
+    pub fn get_progress(&self) -> String {
+        use self::State::*;
+
+        match self.state {
+            Initted { .. } => "No LEN yet.".to_string(),
+            Finished { .. } => "Finished.".to_string(),
+            Started { .. } => {
+                let mut expecting = self
+                    .state
+                    .expecting()
+                    .unwrap()
+                    .into_iter()
+                    .collect::<Vec<&String>>();
+                expecting.sort_by(|x, y| {
+                    if (x == &"NAME") | (x == &"LEN") | (x == &"HASH") {
+                        Ordering::Less
+                    } else if (y == &"NAME") | (y == &"LEN") | (y == &"HASH") {
+                        Ordering::Greater
+                    } else {
+                        x.parse::<usize>()
+                            .unwrap()
+                            .cmp(&y.parse::<usize>().unwrap())
+                    }
+                });
+                format!("Expecting: {:?}", expecting)
+            }
+        }
     }
     pub fn get_finished(self) -> Output {
         self.state.into()
