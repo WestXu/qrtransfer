@@ -56,20 +56,16 @@ fn assemble_data(msgs: HashSet<Msg>) -> Vec<u8> {
         .filter(|msg| matches!(msg, Msg::Piece(_, _)))
         .collect::<Vec<Msg>>();
     ordered_iteration.sort_by(|x, y| {
-        if let Msg::Piece(xi, _) = x {
-            if let Msg::Piece(yi, _) = y {
-                xi.parse::<usize>()
-                    .unwrap()
-                    .cmp(&yi.parse::<usize>().unwrap())
-            } else {
-                Ordering::Greater
-            }
+        if let (Msg::Piece(xi, _), Msg::Piece(yi, _)) = (x, y) {
+            xi.parse::<usize>()
+                .unwrap()
+                .cmp(&yi.parse::<usize>().unwrap())
         } else {
-            Ordering::Greater
+            panic!("")
         }
     });
     log(&format!("{:?}", ordered_iteration));
-    let data = ordered_iteration
+    ordered_iteration
         .iter()
         .map(|msg| {
             if let Msg::Piece(_, data) = msg {
@@ -79,8 +75,7 @@ fn assemble_data(msgs: HashSet<Msg>) -> Vec<u8> {
             }
         })
         .collect::<Vec<Vec<u8>>>()
-        .concat();
-    data
+        .concat()
 }
 
 impl Default for State {
