@@ -44,6 +44,7 @@ struct Started {
     received_msgs: HashSet<Msg>,
     file_name: Option<String>,
     hash: Option<String>,
+    length: usize,
 }
 
 pub struct Finished {
@@ -114,6 +115,7 @@ impl From<Decoder<Initted>> for Decoder<Started> {
                 received_msgs: val.state.received_msgs,
                 file_name: val.state.file_name,
                 hash: val.state.hash,
+                length,
             },
         }
     }
@@ -283,7 +285,16 @@ impl DecoderFactory {
                             .cmp(&y.parse::<usize>().unwrap())
                     }
                 });
-                format!("Expecting: {:?}", expecting)
+                format!(
+                    "{}/{}, expecting: {}.",
+                    val.state.length + 3 - expecting.len(),
+                    val.state.length + 3,
+                    expecting
+                        .into_iter()
+                        .map(|s| s.to_string())
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                )
             }
         }
     }
@@ -356,10 +367,15 @@ fn test_decoder() {
     let mut decoder = DecoderFactory::new();
 
     decoder.process_chunk("NAME:dGVzdF9xcnRyYW5zZmVyLnR4dA==".to_string());
+    println!("{}", decoder.get_progress());
     decoder.process_chunk("LEN:2".to_string());
+    println!("{}", decoder.get_progress());
     decoder.process_chunk("HASH:bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
+    println!("{}", decoder.get_progress());
     decoder.process_chunk("1:G7YA4MVyW6oXCn6KbhrMx0C9wiM8U0+WhRrPCKomVFU2OVunN7y5HhGHtMnB5hPiEp8t9bCBGnjYey3YRlLaTxOWCBIsfQ5bSXyDSXg2x69btma2UFu4x4svyoIGUQyUNPFGXw==".to_string());
+    println!("{}", decoder.get_progress());
     decoder.process_chunk("2:3fsUxrFm4KoZKOUb".to_string());
+    println!("{}", decoder.get_progress());
 
     let res = decoder.get_finished();
     let decoded_data = base64::decode(res.to_base64()).unwrap();
