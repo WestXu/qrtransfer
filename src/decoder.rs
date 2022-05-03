@@ -8,10 +8,7 @@ use std::collections::{HashMap, HashSet};
 use std::mem::take;
 use wasm_bindgen::prelude::*;
 
-struct Decoder<S> {
-    state: S,
-}
-
+#[derive(Default)]
 struct Initted {
     received_iterations: HashMap<String, String>,
     file_name: Option<String>,
@@ -19,6 +16,7 @@ struct Initted {
     length: Option<usize>,
 }
 
+#[derive(Default)]
 struct Started {
     expected_iterations: HashSet<String>,
     received_iterations: HashMap<String, String>,
@@ -54,15 +52,23 @@ impl Finished {
     }
 }
 
+struct Decoder<S> {
+    state: S,
+}
+
 impl Default for Decoder<Initted> {
     fn default() -> Self {
         Decoder {
-            state: Initted {
-                received_iterations: HashMap::new(),
-                file_name: None,
-                hash: None,
-                length: None,
-            },
+            state: Initted::default(),
+        }
+    }
+}
+
+impl Default for Decoder<Started> {
+    // for take to work
+    fn default() -> Self {
+        Decoder {
+            state: Started::default(),
         }
     }
 }
@@ -86,20 +92,6 @@ impl From<Decoder<Initted>> for Decoder<Started> {
                 received_iterations: val.state.received_iterations,
                 file_name: val.state.file_name,
                 hash: val.state.hash,
-            },
-        }
-    }
-}
-
-impl Default for Decoder<Started> {
-    // for take to work
-    fn default() -> Self {
-        Decoder {
-            state: Started {
-                expected_iterations: HashSet::new(),
-                received_iterations: HashMap::new(),
-                file_name: None,
-                hash: None,
             },
         }
     }
@@ -151,6 +143,60 @@ impl Decoder<Started> {
     }
 }
 
+trait Receive {
+    fn get_mut_name(&mut self) -> &mut Option<String>;
+    fn set_name(&mut self, name: String) {
+        log(&format!("[*] File name: {}", name));
+        *(self.get_mut_name()) = Some(name)
+    }
+    fn get_mut_hash(&mut self) -> &mut Option<String>;
+    fn set_hash(&mut self, hash: String) {
+        log(&format!("[*] Hash: {}", hash));
+        *(self.get_mut_hash()) = Some(hash)
+    }
+    fn get_mut_received_iterations(&mut self) -> &mut HashMap<String, String>;
+    fn update(&mut self, i: String, data: String) -> bool {
+        let received_iterations = self.get_mut_received_iterations();
+
+        if received_iterations.contains_key(&i) {
+            return false;
+        }
+
+        received_iterations.insert(i.to_string(), data.to_string());
+
+        log(&format!("processed {}:{}", i, data));
+        match &i as &str {
+            "NAME" => self.set_name(String::from_utf8(base64::decode(data).unwrap()).unwrap()),
+            "HASH" => self.set_hash(data.to_string()),
+            _ => (),
+        };
+        true
+    }
+}
+
+impl Receive for Decoder<Initted> {
+    fn get_mut_name(&mut self) -> &mut Option<String> {
+        &mut self.state.file_name
+    }
+    fn get_mut_hash(&mut self) -> &mut Option<String> {
+        &mut self.state.hash
+    }
+    fn get_mut_received_iterations(&mut self) -> &mut HashMap<String, String> {
+        &mut self.state.received_iterations
+    }
+}
+impl Receive for Decoder<Started> {
+    fn get_mut_name(&mut self) -> &mut Option<String> {
+        &mut self.state.file_name
+    }
+    fn get_mut_hash(&mut self) -> &mut Option<String> {
+        &mut self.state.hash
+    }
+    fn get_mut_received_iterations(&mut self) -> &mut HashMap<String, String> {
+        &mut self.state.received_iterations
+    }
+}
+
 enum DecoderWrapper {
     Initted(Decoder<Initted>),
     Started(Decoder<Started>),
@@ -167,36 +213,6 @@ impl DecoderFactory {
         DecoderFactory {
             decoder: DecoderWrapper::Initted(Decoder::default()),
         }
-    }
-
-    fn set_name(&mut self, name: String) {
-        log(&format!("[*] File name: {}", name));
-        match &mut self.decoder {
-            DecoderWrapper::Initted(val) => {
-                val.state.file_name = Some(name);
-            }
-            DecoderWrapper::Started(val) => {
-                val.state.file_name = Some(name);
-            }
-            DecoderWrapper::Finished(_) => {
-                panic!("Decoder is already finished.")
-            }
-        };
-    }
-
-    fn set_hash(&mut self, hash: String) {
-        log(&format!("[*] Hash {}", hash));
-        match &mut self.decoder {
-            DecoderWrapper::Initted(val) => {
-                val.state.hash = Some(hash);
-            }
-            DecoderWrapper::Started(val) => {
-                val.state.hash = Some(hash);
-            }
-            DecoderWrapper::Finished(_) => {
-                panic!("Decoder is already finished.")
-            }
-        };
     }
 
     pub fn get_progress(&self) -> String {
@@ -223,51 +239,29 @@ impl DecoderFactory {
 
     pub fn process_chunk(&mut self, chunk: String) -> bool {
         let split = chunk.split(':').collect::<Vec<&str>>();
-        let i = split[0];
-        let data = split[1];
+        let i = split[0].to_string();
+        let data = split[1].to_string();
 
         match &mut self.decoder {
+            DecoderWrapper::Initted(decoder) => {
+                let updated = decoder.update(i.clone(), data.clone());
+                if updated & (i == "LEN") {
+                    decoder.state.length = Some(data.to_string().parse::<usize>().unwrap());
+                    self.decoder = DecoderWrapper::Started(take(decoder).into())
+                }
+                updated
+            }
+            DecoderWrapper::Started(decoder) => {
+                let updated = decoder.update(i, data);
+                if updated & decoder.check_finished() {
+                    self.decoder = DecoderWrapper::Finished(take(decoder).into())
+                }
+                updated
+            }
             DecoderWrapper::Finished(_) => {
-                return false;
-            }
-            DecoderWrapper::Initted(val) => {
-                if val.state.received_iterations.contains_key(i) {
-                    return false;
-                }
-                val.state
-                    .received_iterations
-                    .insert(i.to_string(), data.to_string());
-            }
-            DecoderWrapper::Started(val) => {
-                if val.state.received_iterations.contains_key(i) {
-                    return false;
-                }
-                val.state
-                    .received_iterations
-                    .insert(i.to_string(), data.to_string());
+                panic!()
             }
         }
-        match i {
-            "NAME" => self.set_name(String::from_utf8(base64::decode(data).unwrap()).unwrap()),
-            "HASH" => self.set_hash(data.to_string()),
-            _ => (),
-        }
-
-        if let DecoderWrapper::Initted(val) = &mut self.decoder {
-            if i == "LEN" {
-                val.state.length = Some(data.to_string().parse::<usize>().unwrap());
-                self.decoder = DecoderWrapper::Started(take(val).into())
-            }
-        }
-
-        if let DecoderWrapper::Started(val) = &mut self.decoder {
-            if val.check_finished() {
-                self.decoder = DecoderWrapper::Finished(take(val).into())
-            }
-        }
-
-        log(&format!("processed {}", chunk));
-        true
     }
 
     pub fn scan(&mut self, width: u32, height: u32, data: Vec<u8>) -> usize {
