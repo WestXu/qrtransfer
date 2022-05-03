@@ -4,13 +4,35 @@ use super::utils::log;
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
 use std::cmp::Ordering;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::mem::take;
 use wasm_bindgen::prelude::*;
 
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+enum Msg {
+    Length(usize),
+    Name(String),
+    Hash(String),
+    Piece(String, String),
+}
+
+impl Msg {
+    fn new(chunk: String) -> Self {
+        let split = chunk.split(':').collect::<Vec<&str>>();
+        let i = split[0];
+        let data = split[1];
+        match i {
+            "LEN" => Msg::Length(data.to_string().parse::<usize>().unwrap()),
+            "NAME" => Msg::Name(data.to_string()),
+            "HASH" => Msg::Hash(data.to_string()),
+            _ => Msg::Piece(i.to_string(), data.to_string()),
+        }
+    }
+}
+
 #[derive(Default)]
 struct Initted {
-    received_iterations: HashMap<String, String>,
+    received_msgs: HashSet<Msg>,
     file_name: Option<String>,
     hash: Option<String>,
     length: Option<usize>,
@@ -19,7 +41,7 @@ struct Initted {
 #[derive(Default)]
 struct Started {
     expected_iterations: HashSet<String>,
-    received_iterations: HashMap<String, String>,
+    received_msgs: HashSet<Msg>,
     file_name: Option<String>,
     hash: Option<String>,
 }
@@ -89,7 +111,7 @@ impl From<Decoder<Initted>> for Decoder<Started> {
                     }
                     iterations
                 },
-                received_iterations: val.state.received_iterations,
+                received_msgs: val.state.received_msgs,
                 file_name: val.state.file_name,
                 hash: val.state.hash,
             },
@@ -107,19 +129,33 @@ impl From<Decoder<Started>> for Decoder<Finished> {
                 data: {
                     let mut ordered_iteration = val
                         .state
-                        .received_iterations
-                        .iter()
-                        .filter(|(k, _v)| !((k == &"NAME") | (k == &"LEN") | (k == &"HASH")))
-                        .collect::<Vec<_>>();
+                        .received_msgs
+                        .into_iter()
+                        .filter(|msg| matches!(msg, Msg::Piece(_, _)))
+                        .collect::<Vec<Msg>>();
                     ordered_iteration.sort_by(|x, y| {
-                        x.0.parse::<usize>()
-                            .unwrap()
-                            .cmp(&y.0.parse::<usize>().unwrap())
+                        if let Msg::Piece(xi, _) = x {
+                            if let Msg::Piece(yi, _) = y {
+                                xi.parse::<usize>()
+                                    .unwrap()
+                                    .cmp(&yi.parse::<usize>().unwrap())
+                            } else {
+                                Ordering::Greater
+                            }
+                        } else {
+                            Ordering::Greater
+                        }
                     });
                     log(&format!("{:?}", ordered_iteration));
                     let data = ordered_iteration
                         .iter()
-                        .map(|(_k, v)| base64::decode(v).unwrap())
+                        .map(|msg| {
+                            if let Msg::Piece(_, data) = msg {
+                                base64::decode(data).unwrap()
+                            } else {
+                                panic!("")
+                            }
+                        })
                         .collect::<Vec<Vec<u8>>>()
                         .concat();
                     data
@@ -131,10 +167,22 @@ impl From<Decoder<Started>> for Decoder<Finished> {
 
 impl Decoder<Started> {
     fn expecting(&self) -> HashSet<&String> {
+        let received_iterations = self
+            .state
+            .received_msgs
+            .iter()
+            .map(|it| match it {
+                Msg::Hash(_) => "HASH",
+                Msg::Name(_) => "NAME",
+                Msg::Length(_) => "LEN",
+                Msg::Piece(i, _) => i,
+            })
+            .collect::<HashSet<&str>>();
+
         self.state
             .expected_iterations
             .iter()
-            .filter(|s| !self.state.received_iterations.contains_key(*s))
+            .filter(|s| !received_iterations.contains(s as &str)) // what the hell is this... why can't just s.
             .collect()
     }
 
@@ -154,22 +202,25 @@ trait Receive {
         log(&format!("[*] Hash: {}", hash));
         *(self.get_mut_hash()) = Some(hash)
     }
-    fn get_mut_received_iterations(&mut self) -> &mut HashMap<String, String>;
-    fn update(&mut self, i: String, data: String) -> bool {
-        let received_iterations = self.get_mut_received_iterations();
+    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Msg>;
+    fn update(&mut self, msg: Msg) -> bool {
+        let received_msgs = self.get_mut_received_msgs();
 
-        if received_iterations.contains_key(&i) {
+        if received_msgs.contains(&msg) {
             return false;
         }
 
-        received_iterations.insert(i.to_string(), data.to_string());
+        received_msgs.insert(msg.clone());
 
-        log(&format!("processed {}:{}", i, data));
-        match &i as &str {
-            "NAME" => self.set_name(String::from_utf8(base64::decode(data).unwrap()).unwrap()),
-            "HASH" => self.set_hash(data.to_string()),
+        match msg.clone() {
+            Msg::Name(name) => {
+                self.set_name(String::from_utf8(base64::decode(name).unwrap()).unwrap())
+            }
+            Msg::Hash(hash) => self.set_hash(hash.to_string()),
             _ => (),
-        };
+        }
+
+        log(&format!("processed {:?}", msg));
         true
     }
 }
@@ -181,8 +232,8 @@ impl Receive for Decoder<Initted> {
     fn get_mut_hash(&mut self) -> &mut Option<String> {
         &mut self.state.hash
     }
-    fn get_mut_received_iterations(&mut self) -> &mut HashMap<String, String> {
-        &mut self.state.received_iterations
+    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Msg> {
+        &mut self.state.received_msgs
     }
 }
 impl Receive for Decoder<Started> {
@@ -192,8 +243,8 @@ impl Receive for Decoder<Started> {
     fn get_mut_hash(&mut self) -> &mut Option<String> {
         &mut self.state.hash
     }
-    fn get_mut_received_iterations(&mut self) -> &mut HashMap<String, String> {
-        &mut self.state.received_iterations
+    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Msg> {
+        &mut self.state.received_msgs
     }
 }
 
@@ -238,21 +289,21 @@ impl DecoderFactory {
     }
 
     pub fn process_chunk(&mut self, chunk: String) -> bool {
-        let split = chunk.split(':').collect::<Vec<&str>>();
-        let i = split[0].to_string();
-        let data = split[1].to_string();
+        let msg = Msg::new(chunk);
 
         match &mut self.decoder {
             DecoderWrapper::Initted(decoder) => {
-                let updated = decoder.update(i.clone(), data.clone());
-                if updated & (i == "LEN") {
-                    decoder.state.length = Some(data.to_string().parse::<usize>().unwrap());
-                    self.decoder = DecoderWrapper::Started(take(decoder).into())
+                let updated = decoder.update(msg.clone());
+                if updated {
+                    if let Msg::Length(length) = msg {
+                        decoder.state.length = Some(length.to_string().parse::<usize>().unwrap());
+                        self.decoder = DecoderWrapper::Started(take(decoder).into())
+                    }
                 }
                 updated
             }
             DecoderWrapper::Started(decoder) => {
-                let updated = decoder.update(i, data);
+                let updated = decoder.update(msg.clone());
                 if updated & decoder.check_finished() {
                     self.decoder = DecoderWrapper::Finished(take(decoder).into())
                 }
