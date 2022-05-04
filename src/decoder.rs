@@ -344,14 +344,12 @@ impl DecoderFactory {
         );
 
         let mut counter = 0;
-        for code in codes {
+        for code in codes.into_iter().flatten() {
             {
-                if let Ok(code) = code {
-                    if let Ok(decoded) = code.decode() {
-                        if let Ok(msg) = String::from_utf8(decoded.payload) {
-                            if self.process_chunk(msg) {
-                                counter += 1;
-                            }
+                if let Ok(decoded) = code.decode() {
+                    if let Ok(msg) = String::from_utf8(decoded.payload) {
+                        if self.process_chunk(msg) {
+                            counter += 1;
                         }
                     }
                 }
