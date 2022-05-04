@@ -336,9 +336,7 @@ impl DecoderFactory {
                 updated
             }
             DecoderWrapper::Started(decoder) => decoder.update(msg.clone()),
-            DecoderWrapper::Finished(_) => {
-                panic!()
-            }
+            DecoderWrapper::Finished(_) => false,
         };
         if updated {
             self.try_evolve()
