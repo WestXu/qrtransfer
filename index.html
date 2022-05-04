@@ -106,10 +106,10 @@ async function beepN(n) {
     }
 }
 
-function add_download(base64_data) {
+function add_download(base64_data, file_name) {
     let a = document.createElement("a");
     a.href = "data:;base64," + base64_data;
-    a.download = window.decoder.get_name();
+    a.download = file_name;
     a.innerText = "Download";
     document.getElementById("receive").appendChild(a);
     a.click();
@@ -140,7 +140,8 @@ function start_receiving() {
                         beepN(counter);
                         if (decoder.is_finished()) {
                             stop_receiving();
-                            add_download(window.decoder.to_base64());
+                            var finished = window.decoder.get_finished();
+                            add_download(finished.to_base64(), finished.get_name());
                         }
                     }
                 }, 40);
@@ -160,12 +161,12 @@ function stop_receiving() {
 }
 
 </script>
-    <script type="module">import init from '/index-b5e50b10c725386f.js';init('/index-b5e50b10c725386f_bg.wasm');</script>
+    <script type="module">import init from '/qrtransfer-c8eb68a02b993a65.js';init('/qrtransfer-c8eb68a02b993a65_bg.wasm');</script>
     <!-- <script src="//cdn.bootcdn.net/ajax/libs/eruda/2.3.3/eruda.js"></script>
     <script>eruda.init();</script> -->
 
-<link rel="preload" href="/index-b5e50b10c725386f_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
-<link rel="modulepreload" href="/index-b5e50b10c725386f.js"></head>
+<link rel="preload" href="/qrtransfer-c8eb68a02b993a65_bg.wasm" as="fetch" type="application/wasm" crossorigin="">
+<link rel="modulepreload" href="/qrtransfer-c8eb68a02b993a65.js"></head>
 
 
 <body>
