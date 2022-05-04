@@ -13,7 +13,7 @@ fn test_integration() {
 
     let encoder = encoder::Encoder::new(file_name.to_string(), int_array);
 
-    let mut decoder = decoder::DecoderFactory::new();
+    let mut decoder = decoder::Decoder::new();
     for (_name, payload) in encoder.payloads() {
         decoder.process_chunk(payload);
     }

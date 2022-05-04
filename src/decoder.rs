@@ -81,32 +81,32 @@ impl Finished {
     }
 }
 
-struct Decoder<S> {
+struct Machine<S> {
     state: S,
 }
 
-impl Default for Decoder<Initted> {
+impl Default for Machine<Initted> {
     fn default() -> Self {
-        Decoder {
+        Machine {
             state: Initted::default(),
         }
     }
 }
 
-impl Default for Decoder<Started> {
+impl Default for Machine<Started> {
     // for take to work
     fn default() -> Self {
-        Decoder {
+        Machine {
             state: Started::default(),
         }
     }
 }
 
-impl From<Decoder<Initted>> for Decoder<Started> {
-    fn from(val: Decoder<Initted>) -> Decoder<Started> {
-        let length = val.state.length.unwrap();
+impl From<Machine<Initted>> for Machine<Started> {
+    fn from(machine: Machine<Initted>) -> Machine<Started> {
+        let length = machine.state.length.unwrap();
         log(&format!("[*] The message will come in {} parts", length));
-        Decoder {
+        Machine {
             state: Started {
                 expected_iterations: {
                     let mut iterations = HashSet::new();
@@ -118,24 +118,24 @@ impl From<Decoder<Initted>> for Decoder<Started> {
                     }
                     iterations
                 },
-                received_msgs: val.state.received_msgs,
-                file_name: val.state.file_name,
-                hash: val.state.hash,
+                received_msgs: machine.state.received_msgs,
+                file_name: machine.state.file_name,
+                hash: machine.state.hash,
                 length,
             },
         }
     }
 }
 
-impl From<Decoder<Started>> for Decoder<Finished> {
-    fn from(val: Decoder<Started>) -> Decoder<Finished> {
-        assert!(val.check_finished(), "Incomplete data.");
-        Decoder {
+impl From<Machine<Started>> for Machine<Finished> {
+    fn from(machine: Machine<Started>) -> Machine<Finished> {
+        assert!(machine.check_finished(), "Incomplete data.");
+        Machine {
             state: Finished {
-                file_name: val.state.file_name.unwrap(),
-                hash: val.state.hash.unwrap(),
+                file_name: machine.state.file_name.unwrap(),
+                hash: machine.state.hash.unwrap(),
                 data: {
-                    let mut ordered_iteration = val
+                    let mut ordered_iteration = machine
                         .state
                         .received_msgs
                         .into_iter()
@@ -169,7 +169,7 @@ impl From<Decoder<Started>> for Decoder<Finished> {
     }
 }
 
-impl Decoder<Started> {
+impl Machine<Started> {
     fn expecting(&self) -> HashSet<&String> {
         let received_iterations = self
             .state
@@ -229,7 +229,7 @@ trait Receive {
     }
 }
 
-impl Receive for Decoder<Initted> {
+impl Receive for Machine<Initted> {
     fn get_mut_name(&mut self) -> &mut Option<String> {
         &mut self.state.file_name
     }
@@ -240,7 +240,7 @@ impl Receive for Decoder<Initted> {
         &mut self.state.received_msgs
     }
 }
-impl Receive for Decoder<Started> {
+impl Receive for Machine<Started> {
     fn get_mut_name(&mut self) -> &mut Option<String> {
         &mut self.state.file_name
     }
@@ -252,31 +252,31 @@ impl Receive for Decoder<Started> {
     }
 }
 
-enum DecoderWrapper {
-    Initted(Decoder<Initted>),
-    Started(Decoder<Started>),
-    Finished(Decoder<Finished>),
+enum MachineWrapper {
+    Initted(Machine<Initted>),
+    Started(Machine<Started>),
+    Finished(Machine<Finished>),
 }
 
 #[wasm_bindgen]
-pub struct DecoderFactory {
-    decoder: DecoderWrapper,
+pub struct Decoder {
+    decoder: MachineWrapper,
 }
 
 #[wasm_bindgen]
-impl DecoderFactory {
+impl Decoder {
     pub fn new() -> Self {
-        DecoderFactory {
-            decoder: DecoderWrapper::Initted(Decoder::default()),
+        Decoder {
+            decoder: MachineWrapper::Initted(Machine::default()),
         }
     }
 
     pub fn get_progress(&self) -> String {
         match &self.decoder {
-            DecoderWrapper::Initted(_) => "No LEN yet.".to_string(),
-            DecoderWrapper::Finished(_) => "Finished.".to_string(),
-            DecoderWrapper::Started(val) => {
-                let mut expecting = val.expecting().into_iter().collect::<Vec<&String>>();
+            MachineWrapper::Initted(_) => "No LEN yet.".to_string(),
+            MachineWrapper::Finished(_) => "Finished.".to_string(),
+            MachineWrapper::Started(machine) => {
+                let mut expecting = machine.expecting().into_iter().collect::<Vec<&String>>();
                 expecting.sort_by(|x, y| {
                     if (x == &"NAME") | (x == &"LEN") | (x == &"HASH") {
                         Ordering::Less
@@ -290,8 +290,8 @@ impl DecoderFactory {
                 });
                 format!(
                     "{}/{}, expecting: {}.",
-                    val.state.length + 3 - expecting.len(),
-                    val.state.length + 3,
+                    machine.state.length + 3 - expecting.len(),
+                    machine.state.length + 3,
                     expecting
                         .into_iter()
                         .map(|s| s.to_string())
@@ -303,19 +303,19 @@ impl DecoderFactory {
     }
 
     pub fn is_finished(&self) -> bool {
-        matches!(&self.decoder, DecoderWrapper::Finished(_))
+        matches!(&self.decoder, MachineWrapper::Finished(_))
     }
 
     fn try_evolve(&mut self) {
         match &mut self.decoder {
-            DecoderWrapper::Initted(decoder) => {
+            MachineWrapper::Initted(decoder) => {
                 if decoder.state.length.is_some() {
-                    self.decoder = DecoderWrapper::Started(take(decoder).into());
+                    self.decoder = MachineWrapper::Started(take(decoder).into());
                 }
             }
-            DecoderWrapper::Started(decoder) => {
+            MachineWrapper::Started(decoder) => {
                 if decoder.check_finished() {
-                    self.decoder = DecoderWrapper::Finished(take(decoder).into());
+                    self.decoder = MachineWrapper::Finished(take(decoder).into());
                 }
             }
             _ => {}
@@ -326,7 +326,7 @@ impl DecoderFactory {
         let msg = Msg::new(chunk);
 
         let updated = match &mut self.decoder {
-            DecoderWrapper::Initted(decoder) => {
+            MachineWrapper::Initted(decoder) => {
                 let updated = decoder.update(msg.clone());
                 if updated {
                     if let Msg::Length(length) = msg {
@@ -335,8 +335,8 @@ impl DecoderFactory {
                 }
                 updated
             }
-            DecoderWrapper::Started(decoder) => decoder.update(msg.clone()),
-            DecoderWrapper::Finished(_) => false,
+            MachineWrapper::Started(decoder) => decoder.update(msg.clone()),
+            MachineWrapper::Finished(_) => false,
         };
         if updated {
             self.try_evolve()
@@ -370,8 +370,8 @@ impl DecoderFactory {
     }
 
     pub fn get_finished(self) -> Finished {
-        if let DecoderWrapper::Finished(val) = self.decoder {
-            val.state
+        if let MachineWrapper::Finished(machine) = self.decoder {
+            machine.state
         } else {
             panic!("Should be finished by now.")
         }
@@ -380,7 +380,7 @@ impl DecoderFactory {
 
 #[test]
 fn test_decoder() {
-    let mut decoder = DecoderFactory::new();
+    let mut decoder = Decoder::new();
 
     decoder.process_chunk("NAME:dGVzdF9xcnRyYW5zZmVyLnR4dA==".to_string());
     println!("{}", decoder.get_progress());
