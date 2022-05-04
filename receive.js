@@ -21,10 +21,10 @@ async function beepN(n) {
     }
 }
 
-function add_download(base64_data) {
+function add_download(base64_data, file_name) {
     let a = document.createElement("a");
     a.href = "data:;base64," + base64_data;
-    a.download = window.decoder.get_name();
+    a.download = file_name;
     a.innerText = "Download";
     document.getElementById("receive").appendChild(a);
     a.click();
@@ -55,7 +55,8 @@ function start_receiving() {
                         beepN(counter);
                         if (decoder.is_finished()) {
                             stop_receiving();
-                            add_download(window.decoder.to_base64());
+                            var finished = window.decoder.get_finished();
+                            add_download(finished.to_base64(), finished.get_name());
                         }
                     }
                 }, 40);
