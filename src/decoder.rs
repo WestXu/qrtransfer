@@ -306,31 +306,44 @@ impl DecoderFactory {
         matches!(&self.decoder, DecoderWrapper::Finished(_))
     }
 
+    fn try_evolve(&mut self) {
+        match &mut self.decoder {
+            DecoderWrapper::Initted(decoder) => {
+                if decoder.state.length.is_some() {
+                    self.decoder = DecoderWrapper::Started(take(decoder).into());
+                }
+            }
+            DecoderWrapper::Started(decoder) => {
+                if decoder.check_finished() {
+                    self.decoder = DecoderWrapper::Finished(take(decoder).into());
+                }
+            }
+            _ => {}
+        }
+    }
+
     pub fn process_chunk(&mut self, chunk: String) -> bool {
         let msg = Msg::new(chunk);
 
-        match &mut self.decoder {
+        let updated = match &mut self.decoder {
             DecoderWrapper::Initted(decoder) => {
                 let updated = decoder.update(msg.clone());
                 if updated {
                     if let Msg::Length(length) = msg {
                         decoder.state.length = Some(length.to_string().parse::<usize>().unwrap());
-                        self.decoder = DecoderWrapper::Started(take(decoder).into())
                     }
                 }
                 updated
             }
-            DecoderWrapper::Started(decoder) => {
-                let updated = decoder.update(msg.clone());
-                if updated & decoder.check_finished() {
-                    self.decoder = DecoderWrapper::Finished(take(decoder).into())
-                }
-                updated
-            }
+            DecoderWrapper::Started(decoder) => decoder.update(msg.clone()),
             DecoderWrapper::Finished(_) => {
                 panic!()
             }
-        }
+        };
+        if updated {
+            self.try_evolve()
+        };
+        updated
     }
 
     pub fn scan(&mut self, width: u32, height: u32, data: Vec<u8>) -> usize {
