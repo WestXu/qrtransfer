@@ -47,12 +47,14 @@ struct Started {
     length: usize,
 }
 
+#[wasm_bindgen]
 pub struct Finished {
-    pub file_name: String,
+    file_name: String,
     hash: String,
     data: Vec<u8>,
 }
 
+#[wasm_bindgen]
 impl Finished {
     fn get_decompressed_data(&self) -> Vec<u8> {
         log("Decompressing...");
@@ -72,6 +74,10 @@ impl Finished {
         self.check_integrity();
         let decompressed_data = self.get_decompressed_data();
         base64::encode(decompressed_data)
+    }
+
+    pub fn get_name(&self) -> String {
+        self.file_name.clone()
     }
 }
 
@@ -257,6 +263,7 @@ pub struct DecoderFactory {
     decoder: DecoderWrapper,
 }
 
+#[wasm_bindgen]
 impl DecoderFactory {
     pub fn new() -> Self {
         DecoderFactory {
@@ -293,6 +300,10 @@ impl DecoderFactory {
                 )
             }
         }
+    }
+
+    pub fn is_finished(&self) -> bool {
+        matches!(&self.decoder, DecoderWrapper::Finished(_))
     }
 
     pub fn process_chunk(&mut self, chunk: String) -> bool {

@@ -23,6 +23,6 @@ fn test_integration() {
     let decoded_data = base64::decode(res.to_base64()).unwrap();
     let decoded_data = String::from_utf8(decoded_data).unwrap();
 
-    assert_eq!(file_name, res.file_name);
+    assert_eq!(file_name, res.get_name());
     assert_eq!(file_content, decoded_data);
 }
