@@ -311,6 +311,7 @@ impl Decoder {
             MachineWrapper::Initted(decoder) => {
                 if decoder.state.length.is_some() {
                     self.decoder = MachineWrapper::Started(take(decoder).into());
+                    self.try_evolve(); // may evolve agian
                 }
             }
             MachineWrapper::Started(decoder) => {
@@ -397,5 +398,20 @@ fn test_decoder() {
     let decoded_data = base64::decode(res.to_base64()).unwrap();
     let decoded_data = String::from_utf8(decoded_data).unwrap();
     println!("{}", decoded_data);
+    assert_eq!(decoded_data, "Transfer your file from an air gapped computer to iOS/iPhone/iPad using only qrcode, no wifi/usb/bluetooth needed. This is a proof-of-concept project, implemented in Rust WebAssembly.");
+}
+
+#[test]
+fn test_when_len_came_at_last() {
+    let mut decoder = Decoder::new();
+    decoder.process_chunk("NAME:dGVzdF9xcnRyYW5zZmVyLnR4dA==".to_string());
+    decoder.process_chunk("HASH:bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
+    decoder.process_chunk("1:G7YA4MVyW6oXCn6KbhrMx0C9wiM8U0+WhRrPCKomVFU2OVunN7y5HhGHtMnB5hPiEp8t9bCBGnjYey3YRlLaTxOWCBIsfQ5bSXyDSXg2x69btma2UFu4x4svyoIGUQyUNPFGXw==".to_string());
+    decoder.process_chunk("2:3fsUxrFm4KoZKOUb".to_string());
+    decoder.process_chunk("LEN:2".to_string());
+
+    let res = decoder.get_finished();
+    let decoded_data = base64::decode(res.to_base64()).unwrap();
+    let decoded_data = String::from_utf8(decoded_data).unwrap();
     assert_eq!(decoded_data, "Transfer your file from an air gapped computer to iOS/iPhone/iPad using only qrcode, no wifi/usb/bluetooth needed. This is a proof-of-concept project, implemented in Rust WebAssembly.");
 }
