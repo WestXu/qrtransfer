@@ -1,5 +1,6 @@
-use super::utils::{hash, log};
+use crate::utils::{hash, log};
 mod qr;
+use crate::compress;
 use base64::encode;
 use indexmap::IndexMap;
 use qr::qr;
@@ -11,7 +12,10 @@ pub struct Encoder {
 
 impl Encoder {
     pub fn new(file_name: String, data: Vec<u8>) -> Encoder {
-        Encoder { file_name, data }
+        Encoder {
+            file_name,
+            data: compress::compress(data),
+        }
     }
 
     fn get_chunks(&self) -> Vec<&[u8]> {

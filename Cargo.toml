@@ -18,8 +18,15 @@ web-sys = { version = "*", features = [
     'Document',
     'Element',
     'HtmlElement',
-    'Node',
+    'HtmlInputElement',
+    'FileReader',
+    'File',
+    'ProgressEvent',
+    'ScrollToOptions',
+    'ScrollBehavior',
+    'FileList',
     'Window',
     'console',
 ] }
+dioxus = { version = "*", features = ["web"] }
 js-sys = "*"
