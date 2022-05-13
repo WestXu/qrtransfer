@@ -29,16 +29,14 @@ fn stop_scroll(scroll_id: i32) {
 }
 
 pub fn toggle_scroll(
-    scrolling: bool,
-    set_scrolling: &dioxus::prelude::UseState<bool>,
-    scroll_id: i32,
-    set_scroll_id: &dioxus::prelude::UseState<i32>,
+    scrolling: dioxus::hooks::UseState<bool>,
+    scroll_id: dioxus::hooks::UseState<i32>,
 ) {
-    let scrolling = !scrolling;
-    set_scrolling(scrolling);
+    let previous = scrolling.get().to_owned();
+    scrolling.set(!previous);
 
-    match scrolling {
-        true => set_scroll_id(start_scroll()),
-        false => stop_scroll(scroll_id),
+    match !previous {
+        true => scroll_id.set(start_scroll()),
+        false => stop_scroll(*scroll_id.get()),
     }
 }

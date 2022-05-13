@@ -17,8 +17,8 @@ impl QrTransfer {
 }
 
 fn app(cx: Scope) -> Element {
-    let (scroll_id, set_scroll_id) = use_state(&cx, || 0);
-    let (scrolling, set_scrolling) = use_state(&cx, || false);
+    let scroll_id = use_state(&cx, || 0);
+    let scrolling = use_state(&cx, || false);
 
     cx.render(rsx! {
         div {
@@ -31,10 +31,8 @@ fn app(cx: Scope) -> Element {
                     class: "form-check-input",
                     id: "scroll-check",
                     onclick: move |_| send::toggle_scroll(
-                        scrolling.to_owned(), 
-                        set_scrolling, 
-                        scroll_id.to_owned(), 
-                        set_scroll_id
+                        scrolling.to_owned(),
+                        scroll_id.to_owned(),
                     ),
                     r#type: "checkbox",
                 }
