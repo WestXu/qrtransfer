@@ -28,5 +28,5 @@ web-sys = { version = "*", features = [
     'Window',
     'console',
 ] }
-dioxus = { version = "0.1.8", features = ["web"] }
+dioxus = { version = "*", features = ["web"] }
 js-sys = "*"
