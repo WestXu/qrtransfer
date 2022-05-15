@@ -55,26 +55,21 @@ impl Encoder {
         payloads
     }
 
-    fn one_to_html(name: String, payload: String) -> String {
-        "<table style=\"float:left;\">".to_string()
-            + &format!("<tr><td class=\"qr\">{}</td></tr>", qr(&payload))
-            + &format!("<tr><td align=\"center\">{}</td></tr></table>", name)
-    }
-
-    pub fn to_html(self) -> String {
-        let mut html = String::new();
-        for (name, payload) in self.payloads() {
-            log(&payload);
-            html += &Encoder::one_to_html(name, payload);
-        }
-        html
+    pub fn to_qr(self) -> IndexMap<String, String> {
+        self.payloads()
+            .iter()
+            .map(|(name, payload)| {
+                log(payload);
+                (name.to_string(), qr(payload))
+            })
+            .collect()
     }
 }
 
 #[test]
 fn test_encoder() {
     println!(
-        "{}",
+        "{:?}",
         Encoder::new(
             "test_file".to_string(),
             vec!(
@@ -88,6 +83,6 @@ fn test_encoder() {
                 41, 41, 34
             )
         )
-        .to_html()
+        .to_qr()
     )
 }

@@ -6,25 +6,24 @@ use crate::utils::log;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+use dioxus::prelude::*;
+use indexmap::IndexMap;
+
 pub use scroll::toggle_scroll;
 
-fn send(file_name: String, int_array: Vec<u8>) {
-    let html = encoder::Encoder::new(file_name, int_array).to_html();
-
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("should have a document on window");
-    let middle_div = document
-        .get_element_by_id("middle-div")
-        .expect("should have a middle-div element");
-    middle_div.set_inner_html(&html);
-    document
-        .get_element_by_id("scroll-check-div")
-        .unwrap()
-        .set_attribute("style", "display: block;")
-        .unwrap();
+// Remember: owned props must implement PartialEq!
+#[derive(PartialEq, Props, Default)]
+pub struct QrRes {
+    pub payloads: IndexMap<String, String>,
 }
 
-pub fn read_file_content() {
+fn send(qrres: dioxus::hooks::UseState<QrRes>, file_name: String, int_array: Vec<u8>) {
+    qrres.set(QrRes {
+        payloads: { encoder::Encoder::new(file_name, int_array).to_qr() },
+    });
+}
+
+pub fn read_file_content(qrres: dioxus::hooks::UseState<QrRes>) {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
 
@@ -50,7 +49,7 @@ pub fn read_file_content() {
     let fr_c = file_reader.clone();
     let onloadend_cb = Closure::wrap(Box::new(move |_e: web_sys::ProgressEvent| {
         let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
-        send(file_name.clone(), array.to_vec());
+        send(qrres.clone(), file_name.clone(), array.to_vec());
     }) as Box<dyn Fn(web_sys::ProgressEvent)>);
 
     file_reader.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));

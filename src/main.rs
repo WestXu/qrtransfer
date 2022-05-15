@@ -2,6 +2,7 @@ use dioxus::prelude::*;
 use js_sys::Reflect;
 use wasm_bindgen::prelude::*;
 
+use qrtransfer::send::QrRes;
 use qrtransfer::utils::{log, set_panic_hook};
 use qrtransfer::{decoder, send};
 
@@ -16,135 +17,162 @@ impl QrTransfer {
     }
 }
 
-fn app(cx: Scope) -> Element {
+fn scroll(cx: Scope) -> Element {
     let scroll_id = use_state(&cx, || 0);
     let scrolling = use_state(&cx, || false);
-
     cx.render(rsx! {
         div {
-            id: "outer-div",
-            div {
-                class: "form-check form-switch float",
-                id: "scroll-check-div",
-                style: "display: none;",
-                input {
-                    class: "form-check-input",
-                    id: "scroll-check",
-                    onclick: move |_| send::toggle_scroll(
-                        scrolling.to_owned(),
-                        scroll_id.to_owned(),
-                    ),
-                    r#type: "checkbox",
-                }
-                label {
-                    class: "form-check-label",
-                    r#for: "scroll-check",
-                    "Scroll"
+            class: "form-check form-switch float",
+            id: "scroll-check-div",
+            input {
+                class: "form-check-input",
+                id: "scroll-check",
+                onclick: move |_| send::toggle_scroll(
+                    scrolling.to_owned(),
+                    scroll_id.to_owned(),
+                ),
+                r#type: "checkbox",
+            }
+            label {
+                class: "form-check-label",
+                r#for: "scroll-check",
+                "Scroll"
+            }
+        }
+    })
+}
+
+fn qrres_cmp(cx: Scope<QrRes>) -> Element {
+    cx.render(rsx! {
+        cx.props.payloads.iter().map(|(name, svg)| {
+            rsx! {
+                table {
+                    style: "float:left;",
+                    tr {td {class: "qr", dangerous_inner_html: "{svg}"}}
+                    tr {td {"align": "center", "{name}"}}
                 }
             }
-            div {
-                id: "middle-div",
+        })
+    })
+}
+
+fn app(cx: Scope) -> Element {
+    let qrres = use_state(&cx, QrRes::default);
+    if qrres.get().payloads.is_empty() {
+        cx.render(
+            rsx! {
                 div {
-                    id: "inner-div",
+                    id: "outer-div",
                     div {
-                        id: "main-page",
-                        h1 {
-                            "qrtransfer"
-                        }
-                        ul {
-                            class: "nav nav-tabs",
-                            id: "myTab",
-                            role: "tablist",
-                            li {
-                                class: "nav-item",
-                                role: "presentation",
-                                button {
-                                    class: "nav-link active",
-                                    id: "send-tab",
-                                    "aria-controls": "send",
-                                    "aria-selected": "true",
-                                    "data-bs-target": "#send",
-                                    "data-bs-toggle": "tab",
-                                    role: "tab",
-                                    r#type: "button",
-                                    "Send"
-                                }
-                            }
-                            li {
-                                class: "nav-item",
-                                role: "presentation",
-                                button {
-                                    class: "nav-link",
-                                    id: "receive-tab",
-                                    "aria-controls": "receive",
-                                    "aria-selected": "false",
-                                    "data-bs-target": "#receive",
-                                    "data-bs-toggle": "tab",
-                                    role: "tab",
-                                    r#type: "button",
-                                    "Receive"
-                                }
-                            }
-                        }
+                        id: "middle-div",
                         div {
-                            class: "tab-content",
+                            id: "inner-div",
                             div {
-                                class: "tab-pane active",
-                                id: "send",
-                                "aria-labelledby": "send-tab",
-                                role: "tabpanel",
-                                input {
-                                    class: "form-control form-control-lg",
-                                    id: "file-selector",
-                                    onchange: move |_| send::read_file_content(),
-                                    r#type: "file",
+                                id: "main-page",
+                                h1 {
+                                    "qrtransfer"
+                                }
+                                ul {
+                                    class: "nav nav-tabs",
+                                    id: "myTab",
+                                    role: "tablist",
+                                    li {
+                                        class: "nav-item",
+                                        role: "presentation",
+                                        button {
+                                            class: "nav-link active",
+                                            id: "send-tab",
+                                            "aria-controls": "send",
+                                            "aria-selected": "true",
+                                            "data-bs-target": "#send",
+                                            "data-bs-toggle": "tab",
+                                            role: "tab",
+                                            r#type: "button",
+                                            "Send"
+                                        }
+                                    }
+                                    li {
+                                        class: "nav-item",
+                                        role: "presentation",
+                                        button {
+                                            class: "nav-link",
+                                            id: "receive-tab",
+                                            "aria-controls": "receive",
+                                            "aria-selected": "false",
+                                            "data-bs-target": "#receive",
+                                            "data-bs-toggle": "tab",
+                                            role: "tab",
+                                            r#type: "button",
+                                            "Receive"
+                                        }
+                                    }
                                 }
                                 div {
-                                    id: "progress",
-                                }
-                                div {
-                                    id: "qrcode",
-                                }
-                            }
-                            div {
-                                class: "tab-pane",
-                                id: "receive",
-                                "aria-labelledby": "receiv-tab",
-                                role: "tabpanel",
-                                video {
-                                    id: "scan-video",
-                                    playsinline: "true",
-                                    autoplay: "true",
-                                }
-                                canvas {
-                                    id: "canvas",
-                                    style: "display: none;",
-                                }
-                                div {
-                                    id: "cam-qr-result",
-                                    style: "white-space: pre;word-wrap:break-word;",
-                                }
-                                br {
-                                }
-                                button {
-                                    class: "btn btn-outline-primary",
-                                    id: "start-button",
-                                    "onclick": "start_receiving()",
-                                    "Start"
-                                }
-                                button {
-                                    class: "btn btn-outline-danger",
-                                    id: "stop-button",
-                                    "onclick": "stop_receiving()",
-                                    "Stop"
+                                    class: "tab-content",
+                                    div {
+                                        class: "tab-pane active",
+                                        id: "send",
+                                        "aria-labelledby": "send-tab",
+                                        role: "tabpanel",
+                                        input {
+                                            class: "form-control form-control-lg",
+                                            id: "file-selector",
+                                            onchange: move |_| send::read_file_content(qrres.to_owned()),
+                                            r#type: "file",
+                                        }
+                                        div {
+                                            id: "progress",
+                                        }
+                                        div {
+                                            id: "qrcode",
+                                        }
+                                    }
+                                    div {
+                                        class: "tab-pane",
+                                        id: "receive",
+                                        "aria-labelledby": "receiv-tab",
+                                        role: "tabpanel",
+                                        video {
+                                            id: "scan-video",
+                                            playsinline: "true",
+                                            autoplay: "true",
+                                        }
+                                        canvas {
+                                            id: "canvas",
+                                            style: "display: none;",
+                                        }
+                                        div {
+                                            id: "cam-qr-result",
+                                            style: "white-space: pre;word-wrap:break-word;",
+                                        }
+                                        br {
+                                        }
+                                        button {
+                                            class: "btn btn-outline-primary",
+                                            id: "start-button",
+                                            "onclick": "start_receiving()",
+                                            "Start"
+                                        }
+                                        button {
+                                            class: "btn btn-outline-danger",
+                                            id: "stop-button",
+                                            "onclick": "stop_receiving()",
+                                            "Stop"
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-        }
-    })
+        )
+    } else {
+        cx.render(rsx! {
+            div { self::qrres_cmp {payloads: qrres.get().payloads.clone()} }
+            self::scroll {}
+        })
+    }
 }
 
 fn main() {
