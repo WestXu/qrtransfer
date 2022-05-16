@@ -161,6 +161,15 @@ fn app(cx: Scope) -> Element {
                                         }
                                     }
                                 }
+                                a {
+                                    href: "https://github.com/WestXu/qrtransfer",
+                                    img {
+                                        src: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                                        alt: "GitHub",
+                                        height: "30",
+                                        style: "opacity:0.6;margin-top:10;float:right"
+                                    }
+                                }
                             }
                         }
                     }
