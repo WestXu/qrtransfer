@@ -260,6 +260,7 @@ enum MachineWrapper {
 
 #[wasm_bindgen]
 pub struct Decoder {
+    scanner: Quirc,
     decoder: MachineWrapper,
 }
 
@@ -267,6 +268,7 @@ pub struct Decoder {
 impl Decoder {
     pub fn new() -> Self {
         Decoder {
+            scanner: Quirc::default(),
             decoder: MachineWrapper::Initted(Machine::default()),
         }
     }
@@ -348,15 +350,19 @@ impl Decoder {
     pub fn scan(&mut self, width: u32, height: u32, data: Vec<u8>) -> usize {
         let img: RgbaImage = ImageBuffer::from_raw(width, height, data).unwrap();
         let img_gray = DynamicImage::ImageRgba8(img).into_luma8();
-        let mut decoder = Quirc::default();
-        let codes = decoder.identify(
-            img_gray.width() as usize,
-            img_gray.height() as usize,
-            &img_gray,
-        );
+        let codes: Vec<_> = self
+            .scanner
+            .identify(
+                img_gray.width() as usize,
+                img_gray.height() as usize,
+                &img_gray,
+            )
+            .into_iter()
+            .flatten()
+            .collect();
 
         let mut counter = 0;
-        for code in codes.into_iter().flatten() {
+        for code in codes {
             {
                 if let Ok(decoded) = code.decode() {
                     if let Ok(msg) = String::from_utf8(decoded.payload) {
