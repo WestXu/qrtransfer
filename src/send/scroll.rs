@@ -2,11 +2,19 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 fn scroll() {
-    web_sys::window().unwrap().scroll_by_with_scroll_to_options(
+    let window = web_sys::window().unwrap();
+    window.scroll_by_with_scroll_to_options(
         web_sys::ScrollToOptions::new()
             .behavior(web_sys::ScrollBehavior::Instant)
             .top(200.0),
     );
+
+    // ((window.innerHeight + window.scrollY) >= document.body.scrollHeight)
+    if (window.inner_height().unwrap().as_f64().unwrap() + window.scroll_y().unwrap())
+        >= window.document().unwrap().body().unwrap().scroll_height() as f64
+    {
+        window.scroll_to_with_x_and_y(0.0, 0.0);
+    }
 }
 
 fn start_scroll() -> i32 {
