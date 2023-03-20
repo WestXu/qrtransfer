@@ -5,16 +5,16 @@ authors = ["lxu <lxu@junzhiam.com>"]
 edition = "2018"
 
 [dependencies]
-qrcode = "*"
-base64 = "*"
-sha-1 = "*"
-indexmap = "*"
-quircs = "*"
-image = "*"
-brotli = "*"
-wasm-bindgen = { version = "*", features = ["serde-serialize"] }
-console_error_panic_hook = "*"
-web-sys = { version = "*", features = [
+qrcode = "0.12"
+base64 = "0.20"
+sha-1 = "0.10"
+indexmap = "1.9"
+quircs = "0.10"
+image = "0.24"
+brotli = "3.3"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+console_error_panic_hook = "0.1"
+web-sys = { version = "0.3", features = [
     'Document',
     'Element',
     'HtmlElement',
@@ -29,4 +29,4 @@ web-sys = { version = "*", features = [
     'console',
 ] }
 dioxus = { version = "0.2", features = ["web"] }
-js-sys = "*"
+js-sys = "0.3"
