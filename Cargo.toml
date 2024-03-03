@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 qrcode = "0.12"
-base64 = "0.20"
+base64 = "0.22"
 sha-1 = "0.10"
 indexmap = "1.9"
 quircs = "0.10"
