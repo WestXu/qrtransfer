@@ -10,7 +10,7 @@ base64 = "0.20"
 sha-1 = "0.10"
 indexmap = "1.9"
 quircs = "0.10"
-image = "0.24"
+image = "0.25"
 brotli = "3.3"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 console_error_panic_hook = "0.1"
