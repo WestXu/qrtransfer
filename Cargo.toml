@@ -5,7 +5,7 @@ authors = ["lxu <lxu@junzhiam.com>"]
 edition = "2018"
 
 [dependencies]
-qrcode = "0.12"
+qrcode = "0.14"
 base64 = "0.20"
 sha-1 = "0.10"
 indexmap = "1.9"
