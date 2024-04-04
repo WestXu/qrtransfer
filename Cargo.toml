@@ -11,7 +11,7 @@ sha-1 = "0.10"
 indexmap = "1.9"
 quircs = "0.10"
 image = "0.24"
-brotli = "3.3"
+brotli = "4.0"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 console_error_panic_hook = "0.1"
 web-sys = { version = "0.3", features = [
