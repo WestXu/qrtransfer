@@ -13,7 +13,7 @@ quircs = "0.10"
 image = "0.24"
 brotli = "3.3"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
-console_error_panic_hook = "0.1"
+console_error_panic_hook = "0.1.7"
 web-sys = { version = "0.3", features = [
     'Document',
     'Element',
