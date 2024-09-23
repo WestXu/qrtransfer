@@ -1,6 +1,9 @@
+#![allow(non_snake_case)]
+
 use crate::compress::decompress;
 use crate::utils::hash;
 use crate::utils::log;
+use base64::{prelude::BASE64_STANDARD, Engine as _};
 use image::{DynamicImage, ImageBuffer, RgbaImage};
 use quircs::Quirc;
 use std::cmp::Ordering;
@@ -73,7 +76,7 @@ impl Finished {
     pub fn to_base64(&self) -> String {
         self.check_integrity();
         let decompressed_data = self.get_decompressed_data();
-        base64::encode(decompressed_data)
+        BASE64_STANDARD.encode(decompressed_data)
     }
 
     pub fn get_name(&self) -> String {
@@ -155,7 +158,7 @@ impl From<Machine<Started>> for Machine<Finished> {
                         .iter()
                         .map(|msg| {
                             if let Msg::Piece(_, data) = msg {
-                                base64::decode(data).unwrap()
+                                BASE64_STANDARD.decode(data).unwrap()
                             } else {
                                 panic!("")
                             }
@@ -218,7 +221,7 @@ trait Receive {
 
         match msg.clone() {
             Msg::Name(name) => {
-                self.set_name(String::from_utf8(base64::decode(name).unwrap()).unwrap())
+                self.set_name(String::from_utf8(BASE64_STANDARD.decode(name).unwrap()).unwrap())
             }
             Msg::Hash(hash) => self.set_hash(hash.to_string()),
             _ => (),
@@ -266,6 +269,7 @@ pub struct Decoder {
 
 #[wasm_bindgen]
 impl Decoder {
+    #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
         Decoder {
             scanner: Quirc::default(),
@@ -357,7 +361,6 @@ impl Decoder {
                 img_gray.height() as usize,
                 &img_gray,
             )
-            .into_iter()
             .flatten()
             .collect();
 
@@ -401,7 +404,7 @@ fn test_decoder() {
     println!("{}", decoder.get_progress());
 
     let res = decoder.get_finished();
-    let decoded_data = base64::decode(res.to_base64()).unwrap();
+    let decoded_data = BASE64_STANDARD.decode(res.to_base64()).unwrap();
     let decoded_data = String::from_utf8(decoded_data).unwrap();
     println!("{}", decoded_data);
     assert_eq!(decoded_data, "Transfer your file from an air gapped computer to iOS/iPhone/iPad using only qrcode, no wifi/usb/bluetooth needed. This is a proof-of-concept project, implemented in Rust WebAssembly.");
@@ -417,7 +420,7 @@ fn test_when_len_came_at_last() {
     decoder.process_chunk("LEN:2".to_string());
 
     let res = decoder.get_finished();
-    let decoded_data = base64::decode(res.to_base64()).unwrap();
+    let decoded_data = BASE64_STANDARD.decode(res.to_base64()).unwrap();
     let decoded_data = String::from_utf8(decoded_data).unwrap();
     assert_eq!(decoded_data, "Transfer your file from an air gapped computer to iOS/iPhone/iPad using only qrcode, no wifi/usb/bluetooth needed. This is a proof-of-concept project, implemented in Rust WebAssembly.");
 }

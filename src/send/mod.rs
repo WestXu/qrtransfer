@@ -1,7 +1,10 @@
+#![allow(non_snake_case)]
+
 pub mod encoder;
 mod scroll;
 
 use crate::utils::log;
+use crate::QR_RES;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -11,19 +14,37 @@ use indexmap::IndexMap;
 
 pub use scroll::toggle_scroll;
 
-// Remember: owned props must implement PartialEq!
-#[derive(PartialEq, Props, Default)]
+#[derive(PartialEq, Clone, Props, Default)]
 pub struct QrRes {
     pub payloads: IndexMap<String, String>,
 }
 
-fn send(qrres: dioxus::hooks::UseState<QrRes>, file_name: String, int_array: Vec<u8>) {
-    qrres.set(QrRes {
-        payloads: { encoder::Encoder::new(file_name, int_array).to_qr() },
-    });
+pub fn QrResPage(props: QrRes) -> Element {
+    rsx! {
+        {
+            props.payloads.iter().map(|(name, svg)| {
+                rsx! {
+                    table {
+                        style: "float:left;",
+                        tr {td {class: "qr", dangerous_inner_html: "{svg}"}}
+                        tr {td {"align": "center", "{name}"}}
+                    }
+                }
+            })
+        }
+    }
 }
 
-pub fn read_file_content(qrres: dioxus::hooks::UseState<QrRes>) {
+fn send(file_name: String, data: Vec<u8>) {
+    log(&format!("Sending file: {}", file_name));
+    let qr = encoder::Encoder::new(file_name, data).to_qr();
+    log("setting QR_RES");
+
+    *QR_RES.write() = qr;
+    log("QR_RES set");
+}
+
+pub async fn read_file_content() {
     let window = web_sys::window().expect("no global `window` exists");
     let document = window.document().expect("should have a document on window");
 
@@ -47,14 +68,25 @@ pub fn read_file_content(qrres: dioxus::hooks::UseState<QrRes>) {
     let file_reader = web_sys::FileReader::new().unwrap();
 
     let fr_c = file_reader.clone();
-    let onloadend_cb = Closure::wrap(Box::new(move |_e: web_sys::ProgressEvent| {
-        let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
-        send(qrres.clone(), file_name.clone(), array.to_vec());
-    }) as Box<dyn Fn(web_sys::ProgressEvent)>);
+
+    let (rx, tx) = futures::channel::oneshot::channel();
+    let onloadend_cb: Closure<dyn FnMut()> = Closure::new({
+        let mut rx = Some(rx);
+        move || {
+            let array = js_sys::Uint8Array::new(&fr_c.result().unwrap());
+            let _ = rx
+                .take()
+                .expect("multiple files read without refreshing the channel")
+                .send(array.to_vec());
+        }
+    });
 
     file_reader.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
+    onloadend_cb.forget();
     file_reader
         .read_as_array_buffer(&file)
         .expect("blob not readable");
-    onloadend_cb.forget();
+
+    let array = tx.await.unwrap();
+    send(file_name.clone(), array);
 }

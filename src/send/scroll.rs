@@ -1,13 +1,21 @@
+use dioxus::signals::GlobalSignal;
+use dioxus::signals::Readable;
+use dioxus::signals::Signal;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
+use crate::utils::log;
+
+pub static SCROLLING_ID: GlobalSignal<Option<i32>> = Signal::global(|| None);
+
 fn scroll() {
     let window = web_sys::window().unwrap();
-    window.scroll_by_with_scroll_to_options(
-        web_sys::ScrollToOptions::new()
-            .behavior(web_sys::ScrollBehavior::Instant)
-            .top(200.0),
-    );
+    window.scroll_by_with_scroll_to_options(&{
+        let options = web_sys::ScrollToOptions::new();
+        options.set_behavior(web_sys::ScrollBehavior::Instant);
+        options.set_top(200.0);
+        options
+    });
 
     // ((window.innerHeight + window.scrollY) >= document.body.scrollHeight)
     if (window.inner_height().unwrap().as_f64().unwrap() + window.scroll_y().unwrap())
@@ -27,24 +35,23 @@ fn start_scroll() -> i32 {
         )
         .unwrap();
     scroll_cb.forget();
+    log(&format!("start scroll_id: {}", scroll_id));
     scroll_id
 }
 
-fn stop_scroll(scroll_id: i32) {
-    web_sys::window()
-        .unwrap()
-        .clear_interval_with_handle(scroll_id)
+fn stop_scroll(id: i32) {
+    web_sys::window().unwrap().clear_interval_with_handle(id);
+    log(&format!("stop scroll_id: {}", id));
 }
 
-pub fn toggle_scroll(
-    scrolling: dioxus::hooks::UseState<bool>,
-    scroll_id: dioxus::hooks::UseState<i32>,
-) {
-    let previous = scrolling.get().to_owned();
-    scrolling.set(!previous);
+pub fn toggle_scroll() {
+    let previous = *SCROLLING_ID.read();
 
-    match !previous {
-        true => scroll_id.set(start_scroll()),
-        false => stop_scroll(*scroll_id.get()),
+    *SCROLLING_ID.write() = match previous {
+        None => Some(start_scroll()),
+        Some(id) => {
+            stop_scroll(id);
+            None
+        }
     }
 }
