@@ -6,21 +6,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rs/toolchain@v1.0.6
         with:
           toolchain: stable
+          profile: minimal
           target: wasm32-unknown-unknown
+          override: true
 
-      - name: Install trunk
-        uses: jetli/trunk-action@v0.1.0
-        with:
-          version: "latest"
+      - uses: Swatinem/rust-cache@v2
 
+      - name: Install Dioxus-CLI
+        shell: bash
+        run: cargo install dioxus-cli
+  
       - name: Build
-        run: trunk build --release
+        shell: bash
+        run: dx build --release
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
