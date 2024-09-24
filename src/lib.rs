@@ -2,7 +2,7 @@ use dioxus::signals::{GlobalSignal, Signal};
 use indexmap::IndexMap;
 
 pub mod compress;
-pub mod decoder;
+pub mod receive;
 pub mod send;
 pub mod utils;
 
@@ -19,7 +19,7 @@ fn test_integration() {
 
     let encoder = send::encoder::Encoder::new(file_name.to_string(), int_array);
 
-    let mut decoder = decoder::Decoder::new();
+    let mut decoder = receive::Decoder::new();
     for (_name, payload) in encoder.payloads() {
         decoder.process_chunk(payload);
     }

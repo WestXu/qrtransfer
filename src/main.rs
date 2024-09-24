@@ -1,23 +1,11 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use js_sys::Reflect;
-use wasm_bindgen::prelude::*;
+use qrtransfer::receive::{start_receiving, stop_receiving};
 
 use qrtransfer::send::QrResPage;
 use qrtransfer::utils::{log, set_panic_hook};
-use qrtransfer::{decoder, send, QR_RES};
-
-#[wasm_bindgen]
-pub struct QrTransfer {}
-
-#[wasm_bindgen]
-impl QrTransfer {
-    #[wasm_bindgen]
-    pub fn new_decoder(&self) -> Result<decoder::Decoder, JsValue> {
-        Ok(decoder::Decoder::new())
-    }
-}
+use qrtransfer::{send, QR_RES};
 
 fn Scroll() -> Element {
     rsx! {
@@ -112,13 +100,13 @@ fn app() -> Element {
                                     button {
                                         class: "btn btn-outline-primary",
                                         id: "start-button",
-                                        "onclick": "start_receiving()",
+                                        onclick: move |_| start_receiving(),
                                         "Start"
                                     }
                                     button {
                                         class: "btn btn-outline-danger",
                                         id: "stop-button",
-                                        "onclick": "stop_receiving()",
+                                        onclick: move |_| stop_receiving(),
                                         "Stop"
                                     }
                                 }
@@ -148,16 +136,11 @@ fn app() -> Element {
 
 fn main() {
     set_panic_hook();
-    let window = web_sys::window().expect("no global `window` exists");
-    Reflect::set(
-        &window,
-        &JsValue::from("qrtransfer"),
-        &JsValue::from(QrTransfer {}),
-    )
-    .unwrap();
 
-    let document = window.document().expect("should have a document on window");
-    document
+    web_sys::window()
+        .unwrap()
+        .document()
+        .unwrap()
         .get_element_by_id("spinner")
         .unwrap()
         .set_attribute("style", "display: none;")
