@@ -16,13 +16,12 @@ use web_sys::{
 
 pub use decoder::Decoder;
 
-fn beep(freq: f32, duration: f64, vol: f32) {
-    let context = AudioContext::new().unwrap();
-    let oscillator = context.create_oscillator().unwrap();
-    let gain = context.create_gain().unwrap();
+fn beep(audio_context: &AudioContext, freq: f32, duration: f64, vol: f32) {
+    let oscillator = audio_context.create_oscillator().unwrap();
+    let gain = audio_context.create_gain().unwrap();
 
     oscillator.connect_with_audio_node(&gain).unwrap();
-    gain.connect_with_audio_node(&context.destination())
+    gain.connect_with_audio_node(&audio_context.destination())
         .unwrap();
 
     oscillator.frequency().set_value(freq);
@@ -30,9 +29,11 @@ fn beep(freq: f32, duration: f64, vol: f32) {
 
     gain.gain().set_value(vol * 0.01);
 
-    oscillator.start_with_when(context.current_time()).unwrap();
     oscillator
-        .stop_with_when(context.current_time() + duration * 0.001)
+        .start_with_when(audio_context.current_time())
+        .unwrap();
+    oscillator
+        .stop_with_when(audio_context.current_time() + duration * 0.001)
         .unwrap();
 }
 
@@ -48,8 +49,9 @@ async fn sleep(ms: i32) {
 }
 
 async fn beep_n(n: i32) {
+    let audio_context = AudioContext::new().unwrap();
     for _ in 0..n {
-        beep(1500.0, 30.0, 100.0);
+        beep(&audio_context, 1500.0, 30.0, 100.0);
         sleep(50).await;
     }
 }
