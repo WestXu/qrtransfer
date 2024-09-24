@@ -1,0 +1,17 @@
+[application]
+name = "qrtransfer"
+default_platform = "web"
+out_dir = "dist"
+asset_dir = "assets"
+
+[web.app]
+title = "qrtransfer"
+
+[web.resource]
+style = ["https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css"]
+script = [
+    "https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js",
+    "receive.js",
+]
+
+[web.resource.dev]
