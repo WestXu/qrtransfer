@@ -11,7 +11,7 @@ sha-1 = "0.10"
 indexmap = "2.5.0"
 quircs = "0.10"
 image = "0.25.2"
-brotli = "6.0.0"
+brotli = "7.0.0"
 futures = "0.3.30"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.43"
