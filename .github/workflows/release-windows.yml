@@ -24,9 +24,23 @@ jobs:
         timeout-minutes: 15
         run: npx pake-cli https://qrtransfer.westxu.com --name qrtransfer
 
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate tag
+        id: tag
+        run: |
+          TAG="v$(date +'%Y%m%d-%H%M%S')"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag $TAG
+          git push origin $TAG
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
           files: node_modules/pake-cli/output/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
