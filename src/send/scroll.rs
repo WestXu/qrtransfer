@@ -1,5 +1,5 @@
+use dioxus::prelude::ReadableExt;
 use dioxus::signals::GlobalSignal;
-use dioxus::signals::Readable;
 use dioxus::signals::Signal;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
