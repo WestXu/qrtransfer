@@ -38,7 +38,12 @@ pub fn QrResPage(props: QrRes) -> Element {
     }
 
     let current_index = *qr_index.read() % total;
-    let (_name, svg) = props.payloads.get_index(current_index).unwrap();
+    let (name, svg) = props.payloads.get_index(current_index).unwrap();
+    let title = if current_index <= 2 {
+        name.to_owned()
+    } else {
+        format!("{name}/{}", total - 3)
+    };
 
     rsx! {
         div {
@@ -49,7 +54,7 @@ pub fn QrResPage(props: QrRes) -> Element {
             }
             div {
                 style: "margin-top: 20px; font-size: 24px;",
-                "{current_index + 1}/{total}"
+                "{title}"
             }
         }
     }
