@@ -1,6 +1,6 @@
 mod decoder;
 
-use std::collections::HashMap;
+use dioxus::prelude::*;
 use std::sync::Arc;
 use std::sync::Mutex;
 use wasm_bindgen::closure::Closure;
@@ -13,7 +13,6 @@ use web_sys::{
     CanvasRenderingContext2d, HtmlCanvasElement, HtmlVideoElement, MediaStream,
     MediaStreamConstraints,
 };
-use dioxus::prelude::*;
 
 pub use decoder::Decoder;
 
@@ -83,13 +82,16 @@ pub async fn start_receiving() {
     let stream_promise = media_devices
         .get_user_media_with_constraints(&{
             let constraints = MediaStreamConstraints::new();
-            constraints.set_video(
-                &serde_wasm_bindgen::to_value(&HashMap::from([(
-                    "facingMode",
-                    facing_mode,
-                )]))
-                .unwrap(),
-            );
+            constraints.set_video(&{
+                let video_obj = js_sys::Object::new();
+                js_sys::Reflect::set(
+                    &video_obj,
+                    &JsValue::from_str("facingMode"),
+                    &JsValue::from_str(&facing_mode),
+                )
+                .unwrap();
+                JsValue::from(video_obj)
+            });
             constraints
         })
         .unwrap();
