@@ -2543,6 +2543,7 @@ dependencies = [
  "image",
  "indexmap",
  "js-sys",
+ "num-bigint",
  "qrcode",
  "quircs",
  "serde-wasm-bindgen",

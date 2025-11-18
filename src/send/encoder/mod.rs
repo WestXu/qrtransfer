@@ -1,7 +1,7 @@
 use crate::utils::{hash, log};
 mod qr;
+use crate::base10;
 use crate::compress;
-use base64::{prelude::BASE64_STANDARD, Engine as _};
 use indexmap::IndexMap;
 use qr::qr;
 
@@ -32,7 +32,7 @@ impl Encoder {
         let mut headers = IndexMap::new();
         headers.insert(
             "NAME".to_string(),
-            format!("NAME:{}", BASE64_STANDARD.encode(&self.file_name)),
+            format!("NAME:{}", base10::encode(self.file_name.as_bytes())),
         );
         headers.insert("LEN".to_string(), format!("LEN:{}", length));
         headers.insert("HASH".to_string(), format!("HASH:{}", hash(&self.data)));
@@ -46,7 +46,7 @@ impl Encoder {
         for (counter, data) in chunks.iter().enumerate() {
             data_payloads.insert(
                 format!("{}", counter + 1),
-                format!("{}:{}", counter + 1, BASE64_STANDARD.encode(data)),
+                format!("{}:{}", counter + 1, base10::encode(data)),
             );
         }
 

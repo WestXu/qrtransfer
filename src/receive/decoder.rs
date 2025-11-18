@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 
+use crate::base10;
 use crate::compress::decompress;
 use crate::utils::hash;
 use crate::utils::log;
@@ -158,7 +159,7 @@ impl From<Machine<Started>> for Machine<Finished> {
                         .iter()
                         .map(|msg| {
                             if let Msg::Piece(_, data) = msg {
-                                BASE64_STANDARD.decode(data).unwrap()
+                                base10::decode(data)
                             } else {
                                 panic!("")
                             }
@@ -221,7 +222,7 @@ trait Receive {
 
         match msg.clone() {
             Msg::Name(name) => {
-                self.set_name(String::from_utf8(BASE64_STANDARD.decode(name).unwrap()).unwrap())
+                self.set_name(String::from_utf8(base10::decode(&name)).unwrap())
             }
             Msg::Hash(hash) => self.set_hash(hash.to_string()),
             _ => (),
@@ -392,15 +393,15 @@ impl Decoder {
 fn test_decoder() {
     let mut decoder = Decoder::new();
 
-    decoder.process_chunk("NAME:dGVzdF9xcnRyYW5zZmVyLnR4dA==".to_string());
+    decoder.process_chunk("NAME:2597379451834392631223363866405679089128269172".to_string());
     println!("{}", decoder.get_progress());
     decoder.process_chunk("LEN:2".to_string());
     println!("{}", decoder.get_progress());
     decoder.process_chunk("HASH:bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
     println!("{}", decoder.get_progress());
-    decoder.process_chunk("1:G7YA4MVyW6oXCn6KbhrMx0C9wiM8U0+WhRrPCKomVFU2OVunN7y5HhGHtMnB5hPiEp8t9bCBGnjYey3YRlLaTxOWCBIsfQ5bSXyDSXg2x69btma2UFu4x4svyoIGUQyUNPFGXw==".to_string());
+    decoder.process_chunk("1:2481676554535304448989663285024985913136368361479567388366436794976484106841552224124172984975668570544709175647171746092269804540550994669301355164043499806044980564484156500177098332432694272017792190515369801561555600289680265659814032923".to_string());
     println!("{}", decoder.get_progress());
-    decoder.process_chunk("2:3fsUxrFm4KoZKOUb".to_string());
+    decoder.process_chunk("2:8633128646008937860073585629".to_string());
     println!("{}", decoder.get_progress());
 
     let res = decoder.get_finished();
@@ -413,10 +414,10 @@ fn test_decoder() {
 #[test]
 fn test_when_len_came_at_last() {
     let mut decoder = Decoder::new();
-    decoder.process_chunk("NAME:dGVzdF9xcnRyYW5zZmVyLnR4dA==".to_string());
+    decoder.process_chunk("NAME:2597379451834392631223363866405679089128269172".to_string());
     decoder.process_chunk("HASH:bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
-    decoder.process_chunk("1:G7YA4MVyW6oXCn6KbhrMx0C9wiM8U0+WhRrPCKomVFU2OVunN7y5HhGHtMnB5hPiEp8t9bCBGnjYey3YRlLaTxOWCBIsfQ5bSXyDSXg2x69btma2UFu4x4svyoIGUQyUNPFGXw==".to_string());
-    decoder.process_chunk("2:3fsUxrFm4KoZKOUb".to_string());
+    decoder.process_chunk("1:2481676554535304448989663285024985913136368361479567388366436794976484106841552224124172984975668570544709175647171746092269804540550994669301355164043499806044980564484156500177098332432694272017792190515369801561555600289680265659814032923".to_string());
+    decoder.process_chunk("2:8633128646008937860073585629".to_string());
     decoder.process_chunk("LEN:2".to_string());
 
     let res = decoder.get_finished();
