@@ -7,6 +7,19 @@ jobs:
   build-windows:
     runs-on: windows-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Generate tag
+        id: tag
+        run: |
+          $TAG = "v$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+          echo "tag=$TAG" >> $env:GITHUB_OUTPUT
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag $TAG
+          git push origin $TAG
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -23,19 +36,6 @@ jobs:
       - name: Build Windows executable with Pake
         timeout-minutes: 15
         run: npx pake-cli https://qrtransfer.westxu.com --name qrtransfer
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Generate tag
-        id: tag
-        run: |
-          $TAG = "v$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-          echo "tag=$TAG" >> $env:GITHUB_OUTPUT
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag $TAG
-          git push origin $TAG
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
