@@ -2539,6 +2539,7 @@ dependencies = [
  "console_error_panic_hook",
  "dioxus",
  "futures",
+ "gloo-timers",
  "image",
  "indexmap",
  "js-sys",

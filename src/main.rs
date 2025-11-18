@@ -3,23 +3,9 @@
 use dioxus::prelude::*;
 use qrtransfer::receive::{start_receiving, stop_receiving};
 
-use qrtransfer::send::QrResPage;
+use qrtransfer::send::{self, QrResPage};
 use qrtransfer::utils::{log, set_panic_hook};
-use qrtransfer::{send, QR_RES};
-
-fn Scroll() -> Element {
-    rsx! {
-        div { class: "form-check form-switch float", id: "scroll-check-div",
-            input {
-                class: "form-check-input",
-                id: "scroll-check",
-                onclick: move |_| send::toggle_scroll(),
-                r#type: "checkbox"
-            }
-            label { class: "form-check-label", r#for: "scroll-check", "Scroll" }
-        }
-    }
-}
+use qrtransfer::QR_RES;
 
 fn app() -> Element {
     let payloads = QR_RES.read().clone();
@@ -126,10 +112,7 @@ fn app() -> Element {
         }
     } else {
         rsx! {
-            div {
-                QrResPage { payloads }
-            }
-            Scroll {}
+            QrResPage { payloads }
         }
     }
 }

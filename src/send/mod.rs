@@ -1,10 +1,9 @@
 #![allow(non_snake_case)]
 
 pub mod encoder;
-mod scroll;
 
 use crate::utils::log;
-use crate::QR_RES;
+use crate::{QR_INDEX, QR_RES};
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -12,25 +11,46 @@ use wasm_bindgen::JsCast;
 use dioxus::prelude::*;
 use indexmap::IndexMap;
 
-pub use scroll::toggle_scroll;
-
 #[derive(PartialEq, Clone, Props, Default)]
 pub struct QrRes {
     pub payloads: IndexMap<String, String>,
 }
 
 pub fn QrResPage(props: QrRes) -> Element {
-    rsx! {
-        {
-            props.payloads.iter().map(|(name, svg)| {
-                rsx! {
-                    table {
-                        style: "float:left;",
-                        tr {td {class: "qr", dangerous_inner_html: "{svg}"}}
-                        tr {td {"align": "center", "{name}"}}
-                    }
+    let qr_index = QR_INDEX.signal();
+
+    let total = props.payloads.len();
+
+    use_effect(move || {
+        if total > 0 {
+            spawn(async move {
+                loop {
+                    gloo_timers::future::TimeoutFuture::new(500).await;
+                    let current = *QR_INDEX.read();
+                    *QR_INDEX.write() = (current + 1) % total;
                 }
-            })
+            });
+        }
+    });
+
+    if props.payloads.is_empty() {
+        return rsx! { div {} };
+    }
+
+    let current_index = *qr_index.read() % total;
+    let (_name, svg) = props.payloads.get_index(current_index).unwrap();
+
+    rsx! {
+        div {
+            style: "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;",
+            div {
+                class: "qr",
+                dangerous_inner_html: "{svg}"
+            }
+            div {
+                style: "margin-top: 20px; font-size: 24px;",
+                "{current_index + 1}/{total}"
+            }
         }
     }
 }
@@ -40,6 +60,7 @@ fn send(file_name: String, data: Vec<u8>) {
     let qr = encoder::Encoder::new(file_name, data).to_qr();
     log("setting QR_RES");
 
+    *QR_INDEX.write() = 0;
     *QR_RES.write() = qr;
     log("QR_RES set");
 }
