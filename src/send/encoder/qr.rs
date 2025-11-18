@@ -5,8 +5,8 @@ pub fn qr(content: &str) -> String {
     let code = QrCode::new(content).unwrap();
     let image = code
         .render()
-        .min_dimensions(200, 200)
-        .max_dimensions(200, 200)
+        .min_dimensions(400, 400)
+        .max_dimensions(400, 400)
         .dark_color(svg::Color("#000000"))
         .light_color(svg::Color("#ffffff"))
         .build();
