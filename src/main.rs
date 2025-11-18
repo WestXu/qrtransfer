@@ -61,7 +61,7 @@ fn app() -> Element {
                                                 send::read_file_content().await;
                                             });
                                         },
-                                        r#type: "file"
+                                        r#type: "file",
                                     }
                                     div { id: "progress" }
                                     div { id: "qrcode" }
@@ -76,16 +76,15 @@ fn app() -> Element {
                                         playsinline: "true",
                                         autoplay: "true",
                                         style: "cursor: pointer;",
-                                        onclick: move |_| switch_camera()
+                                        onclick: move |_| switch_camera(),
                                     }
-                                    div {
-                                        style: "font-size: 0.85em; color: #666; margin-top: 5px;",
+                                    div { style: "font-size: 0.85em; color: #666; margin-top: 5px;",
                                         "Click video to switch camera"
                                     }
                                     canvas { id: "canvas", style: "display: none;" }
                                     div {
                                         id: "cam-qr-result",
-                                        style: "white-space: pre;word-wrap:break-word;"
+                                        style: "white-space: pre;word-wrap:break-word;",
                                     }
                                     br {
                                     }
@@ -108,7 +107,7 @@ fn app() -> Element {
                                     src: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
                                     alt: "GitHub",
                                     height: "30",
-                                    style: "opacity:0.6;margin-top:10;float:right"
+                                    style: "opacity:0.6;margin-top:10;float:right",
                                 }
                             }
                         }

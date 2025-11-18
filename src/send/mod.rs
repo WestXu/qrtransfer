@@ -34,7 +34,9 @@ pub fn QrResPage(props: QrRes) -> Element {
     });
 
     if props.payloads.is_empty() {
-        return rsx! { div {} };
+        return rsx! {
+            div {}
+        };
     }
 
     let current_index = *qr_index.read() % total;
@@ -46,16 +48,9 @@ pub fn QrResPage(props: QrRes) -> Element {
     };
 
     rsx! {
-        div {
-            style: "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;",
-            div {
-                class: "qr",
-                dangerous_inner_html: "{svg}"
-            }
-            div {
-                style: "margin-top: 20px; font-size: 24px;",
-                "{title}"
-            }
+        div { style: "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;",
+            div { class: "qr", dangerous_inner_html: "{svg}" }
+            div { style: "margin-top: 20px; font-size: 24px;", "{title}" }
         }
     }
 }

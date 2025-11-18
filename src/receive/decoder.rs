@@ -221,9 +221,7 @@ trait Receive {
         received_msgs.insert(msg.clone());
 
         match msg.clone() {
-            Msg::Name(name) => {
-                self.set_name(String::from_utf8(base10::decode(&name)).unwrap())
-            }
+            Msg::Name(name) => self.set_name(String::from_utf8(base10::decode(&name)).unwrap()),
             Msg::Hash(hash) => self.set_hash(hash.to_string()),
             _ => (),
         }
