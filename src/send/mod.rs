@@ -25,7 +25,7 @@ pub fn QrResPage(props: QrRes) -> Element {
         if total > 0 {
             spawn(async move {
                 loop {
-                    gloo_timers::future::TimeoutFuture::new(500).await;
+                    gloo_timers::future::TimeoutFuture::new(100).await;
                     let current = *QR_INDEX.read();
                     *QR_INDEX.write() = (current + 1) % total;
                 }
