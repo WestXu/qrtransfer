@@ -35,12 +35,12 @@ jobs:
 
       - name: Build Windows executable with Pake
         timeout-minutes: 15
-        run: npx pake-cli https://qrtransfer.westxu.com --name qrtransfer
+        run: npx pake-cli https://qrtransfer.westxu.com --name qrtransfer --wasm --enable-drag-drop
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
-          files: node_modules/pake-cli/output/*
+          files: node_modules/.pnpm/pake-cli@*/node_modules/pake-cli/src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msi/*.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
