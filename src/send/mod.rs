@@ -18,16 +18,33 @@ pub struct QrRes {
 
 pub fn QrResPage(props: QrRes) -> Element {
     let qr_index = QR_INDEX.signal();
+    let mut is_playing = use_signal(|| true);
+    let mut playback_speed = use_signal(|| 1.0);
+    let should_loop = use_signal(|| true);
 
     let total = props.payloads.len();
 
-    use_effect(move || {
+    use_hook(|| {
         if total > 0 {
             spawn(async move {
                 loop {
-                    gloo_timers::future::TimeoutFuture::new(100).await;
-                    let current = *QR_INDEX.read();
-                    *QR_INDEX.write() = (current + 1) % total;
+                    let speed = *playback_speed.read();
+                    let interval_ms = (100.0 / speed) as u32;
+                    gloo_timers::future::TimeoutFuture::new(interval_ms).await;
+
+                    if *is_playing.read() {
+                        let current = *QR_INDEX.read();
+                        let next = current + 1;
+                        if next >= total {
+                            if *should_loop.read() {
+                                *QR_INDEX.write() = 0;
+                            } else {
+                                *is_playing.write() = false;
+                            }
+                        } else {
+                            *QR_INDEX.write() = next;
+                        }
+                    }
                 }
             });
         }
@@ -41,16 +58,75 @@ pub fn QrResPage(props: QrRes) -> Element {
 
     let current_index = *qr_index.read() % total;
     let (name, svg) = props.payloads.get_index(current_index).unwrap();
-    let title = if current_index <= 2 {
-        name.to_owned()
-    } else {
-        format!("{name}/{}", total - 3)
-    };
+
+    let play_pause_text = if *is_playing.read() { "⏸" } else { "▶" };
+    let speed_text = format!("{}x", *playback_speed.read());
 
     rsx! {
         div { style: "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;",
             div { class: "qr", dangerous_inner_html: "{svg}" }
-            div { style: "margin-top: 20px; font-size: 24px;", "{title}" }
+            div { style: "margin-top: 10px; font-size: 16px;", "{name} / {total}" }
+
+            div { style: "margin-top: 20px; display: flex; align-items: center; gap: 10px;",
+                button {
+                    style: "font-size: 24px; padding: 5px 15px; cursor: pointer;",
+                    onclick: move |_| {
+                        let mut idx = *QR_INDEX.read();
+                        if idx > 0 {
+                            idx -= 1;
+                        } else {
+                            idx = total - 1;
+                        }
+                        *QR_INDEX.write() = idx;
+                    },
+                    "◄"
+                }
+                button {
+                    style: "font-size: 24px; padding: 5px 15px; cursor: pointer;",
+                    onclick: move |_| {
+                        let current = *is_playing.read();
+                        *is_playing.write() = !current;
+                    },
+                    "{play_pause_text}"
+                }
+                button {
+                    style: "font-size: 24px; padding: 5px 15px; cursor: pointer;",
+                    onclick: move |_| {
+                        let idx = (*QR_INDEX.read() + 1) % total;
+                        *QR_INDEX.write() = idx;
+                    },
+                    "►"
+                }
+
+                input {
+                    r#type: "range",
+                    style: "width: 300px;",
+                    min: "0",
+                    max: "{total - 1}",
+                    value: "{current_index}",
+                    oninput: move |evt| {
+                        if let Ok(val) = evt.value().parse::<usize>() {
+                            *QR_INDEX.write() = val;
+                        }
+                    },
+                }
+
+                select {
+                    style: "font-size: 16px; padding: 5px;",
+                    value: "{speed_text}",
+                    onchange: move |evt| {
+                        let speed_str = evt.value();
+                        if let Ok(speed) = speed_str.trim_end_matches('x').parse::<f32>() {
+                            *playback_speed.write() = speed;
+                        }
+                    },
+                    option { value: "0.5x", "0.5x" }
+                    option { value: "1x", "1x" }
+                    option { value: "2x", "2x" }
+                    option { value: "5x", "5x" }
+                    option { value: "10x", "10x" }
+                }
+            }
         }
     }
 }
