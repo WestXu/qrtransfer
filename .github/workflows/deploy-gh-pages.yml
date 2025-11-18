@@ -21,7 +21,7 @@ jobs:
   
       - name: Build
         shell: bash
-        run: dx build --release
+        run: dx build --release --outdir dist
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
