@@ -7,17 +7,17 @@ edition = "2018"
 [dependencies]
 qrcode = "0.14.1"
 base64 = "0.22.1"
-sha-1 = "0.10"
-indexmap = "2.5.0"
-quircs = "0.10"
-image = "0.25.2"
-brotli = "7.0.0"
-futures = "0.3.30"
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
-wasm-bindgen-futures = "0.4.43"
+sha-1 = "0.10.1"
+indexmap = "2.12.0"
+quircs = "0.10.3"
+image = "0.25.9"
+brotli = "8.0.2"
+futures = "0.3.31"
+wasm-bindgen = { version = "0.2.105", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4.55"
 serde-wasm-bindgen = "0.6.5"
-console_error_panic_hook = "0.1"
-web-sys = { version = "0.3", features = [
+console_error_panic_hook = "0.1.7"
+web-sys = { version = "0.3.82", features = [
     'Document',
     'Element',
     'HtmlElement',
@@ -46,8 +46,8 @@ web-sys = { version = "0.3", features = [
     'ImageData',
     'MediaStreamTrack',
 ] }
-dioxus = { version = "0.7", features = ["web"] }
-js-sys = "0.3"
+dioxus = { version = "0.7.1", features = ["web"] }
+js-sys = "0.3.82"
 
 [profile]
 
