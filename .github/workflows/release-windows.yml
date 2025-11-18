@@ -1,0 +1,46 @@
+name: Release Windows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install Dioxus CLI
+        run: cargo install dioxus-cli
+
+      - name: Build web app
+        run: dx build --release --outdir dist
+
+      - name: Install Pake CLI
+        run: npm install -g pake-cli
+
+      - name: Build Windows executable with Pake
+        run: pake dist/index.html --name qrtransfer --targets windows
+
+      - name: Create zip archive
+        run: |
+          cd output
+          Compress-Archive -Path qrtransfer_*.exe -DestinationPath qrtransfer-windows.zip
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: output/qrtransfer-windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
