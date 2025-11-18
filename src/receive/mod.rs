@@ -13,8 +13,11 @@ use web_sys::{
     CanvasRenderingContext2d, HtmlCanvasElement, HtmlVideoElement, MediaStream,
     MediaStreamConstraints,
 };
+use dioxus::prelude::*;
 
 pub use decoder::Decoder;
+
+use crate::CAMERA_FACING;
 
 fn beep(audio_context: &AudioContext, freq: f32, duration: f64, vol: f32) {
     let oscillator = audio_context.create_oscillator().unwrap();
@@ -76,13 +79,14 @@ pub async fn start_receiving() {
     let window = web_sys::window().unwrap();
     let navigator = window.navigator();
     let media_devices = navigator.media_devices().unwrap();
+    let facing_mode = CAMERA_FACING.read().clone();
     let stream_promise = media_devices
         .get_user_media_with_constraints(&{
             let constraints = MediaStreamConstraints::new();
             constraints.set_video(
                 &serde_wasm_bindgen::to_value(&HashMap::from([(
                     "facingMode",
-                    "environment".to_string(),
+                    facing_mode,
                 )]))
                 .unwrap(),
             );
@@ -199,4 +203,17 @@ pub fn stop_receiving() {
         .dyn_into::<CanvasRenderingContext2d>()
         .unwrap();
     ctx.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
+}
+
+pub fn switch_camera() {
+    let mut camera = CAMERA_FACING.write();
+    *camera = if *camera == "environment" {
+        "user".to_string()
+    } else {
+        "environment".to_string()
+    };
+    drop(camera);
+
+    stop_receiving();
+    spawn_local(start_receiving());
 }

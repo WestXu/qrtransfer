@@ -1,7 +1,7 @@
 #![allow(non_snake_case)]
 
 use dioxus::prelude::*;
-use qrtransfer::receive::{start_receiving, stop_receiving};
+use qrtransfer::receive::{start_receiving, stop_receiving, switch_camera};
 
 use qrtransfer::send::{self, QrResPage};
 use qrtransfer::utils::{log, set_panic_hook};
@@ -74,7 +74,13 @@ fn app() -> Element {
                                     video {
                                         id: "scan-video",
                                         playsinline: "true",
-                                        autoplay: "true"
+                                        autoplay: "true",
+                                        style: "cursor: pointer;",
+                                        onclick: move |_| switch_camera()
+                                    }
+                                    div {
+                                        style: "font-size: 0.85em; color: #666; margin-top: 5px;",
+                                        "Click video to switch camera"
                                     }
                                     canvas { id: "canvas", style: "display: none;" }
                                     div {

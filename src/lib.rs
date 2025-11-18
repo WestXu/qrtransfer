@@ -8,6 +8,7 @@ pub mod utils;
 
 pub static QR_RES: GlobalSignal<IndexMap<String, String>> = Signal::global(IndexMap::new);
 pub static QR_INDEX: GlobalSignal<usize> = Signal::global(|| 0);
+pub static CAMERA_FACING: GlobalSignal<String> = Signal::global(|| "environment".to_string());
 
 #[test]
 fn test_integration() {
