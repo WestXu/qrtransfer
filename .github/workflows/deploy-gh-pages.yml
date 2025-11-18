@@ -21,11 +21,11 @@ jobs:
   
       - name: Build
         shell: bash
-        run: dx build --release --outdir dist
+        run: dx bundle --release --platform web --out-dir dist
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
+          publish_dir: ./dist/public
           cname: qrtransfer.westxu.com
