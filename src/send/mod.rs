@@ -18,7 +18,7 @@ pub struct QrRes {
 
 pub fn QrResPage(props: QrRes) -> Element {
     let qr_index = QR_INDEX.signal();
-    let mut is_playing = use_signal(|| true);
+    let mut is_playing = use_signal(|| false);
     let mut playback_speed = use_signal(|| 1.0);
     let should_loop = use_signal(|| true);
 
@@ -57,15 +57,21 @@ pub fn QrResPage(props: QrRes) -> Element {
     }
 
     let current_index = *qr_index.read() % total;
-    let (name, svg) = props.payloads.get_index(current_index).unwrap();
+    let (_name, svg) = props.payloads.get_index(current_index).unwrap();
 
     let play_pause_text = if *is_playing.read() { "⏸" } else { "▶" };
     let speed_text = format!("{}x", *playback_speed.read());
 
+    let title = if current_index == 0 {
+        "* Scan this METADATA before playing".to_string()
+    } else {
+        format!("{} / {}", current_index, total - 1)
+    };
+
     rsx! {
         div { style: "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;",
             div { class: "qr", dangerous_inner_html: "{svg}" }
-            div { style: "margin-top: 10px; font-size: 16px;", "{name} / {total}" }
+            div { style: "margin-top: 10px; font-size: 16px;", "{title}" }
 
             div { style: "margin-top: 20px; display: flex; align-items: center; gap: 10px;",
                 button {
