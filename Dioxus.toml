@@ -1,8 +1,6 @@
 [application]
 name = "qrtransfer"
 default_platform = "web"
-out_dir = "dist"
-asset_dir = "assets"
 
 [web.app]
 title = "qrtransfer"
