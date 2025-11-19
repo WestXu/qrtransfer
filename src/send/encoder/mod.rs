@@ -28,30 +28,28 @@ impl Encoder {
         chunks
     }
 
-    fn get_headers(&self, length: usize) -> IndexMap<String, String> {
-        let mut headers = IndexMap::new();
-        headers.insert(
-            "NAME".to_string(),
-            format!("NAME:{}", base10::encode(self.file_name.as_bytes())),
-        );
-        headers.insert("LEN".to_string(), format!("LEN:{}", length));
-        headers.insert("HASH".to_string(), format!("HASH:{}", hash(&self.data)));
-        headers
+    fn get_metadata(&self, length: usize) -> String {
+        format!(
+            "METADATA:{},{},{}",
+            base10::encode(self.file_name.as_bytes()),
+            length,
+            hash(&self.data)
+        )
     }
 
     pub fn payloads(self) -> IndexMap<String, String> {
         let chunks = self.get_chunks();
 
-        let mut data_payloads = IndexMap::new();
+        let mut payloads = IndexMap::new();
+        payloads.insert("METADATA".to_string(), self.get_metadata(chunks.len()));
+
         for (counter, data) in chunks.iter().enumerate() {
-            data_payloads.insert(
+            payloads.insert(
                 format!("{}", counter + 1),
                 format!("{}:{}", counter + 1, base10::encode(data)),
             );
         }
 
-        let mut payloads = self.get_headers(chunks.len());
-        payloads.extend(data_payloads);
         payloads
     }
 

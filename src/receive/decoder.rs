@@ -14,9 +14,11 @@ use wasm_bindgen::prelude::*;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 enum Msg {
-    Length(usize),
-    Name(String),
-    Hash(String),
+    Metadata {
+        name: String,
+        length: usize,
+        hash: String,
+    },
     Piece(String, String),
 }
 
@@ -26,9 +28,14 @@ impl Msg {
         let i = split[0];
         let data = split[1];
         match i {
-            "LEN" => Msg::Length(data.to_string().parse::<usize>().unwrap()),
-            "NAME" => Msg::Name(data.to_string()),
-            "HASH" => Msg::Hash(data.to_string()),
+            "METADATA" => {
+                let parts: Vec<&str> = data.split(',').collect();
+                Msg::Metadata {
+                    name: parts[0].to_string(),
+                    length: parts[1].parse::<usize>().unwrap(),
+                    hash: parts[2].to_string(),
+                }
+            }
             _ => Msg::Piece(i.to_string(), data.to_string()),
         }
     }
@@ -114,9 +121,7 @@ impl From<Machine<Initted>> for Machine<Started> {
             state: Started {
                 expected_iterations: {
                     let mut iterations = HashSet::new();
-                    iterations.insert("NAME".to_string());
-                    iterations.insert("LEN".to_string());
-                    iterations.insert("HASH".to_string());
+                    iterations.insert("METADATA".to_string());
                     for i in 1..=length {
                         iterations.insert(i.to_string());
                     }
@@ -180,9 +185,7 @@ impl Machine<Started> {
             .received_msgs
             .iter()
             .map(|it| match it {
-                Msg::Hash(_) => "HASH",
-                Msg::Name(_) => "NAME",
-                Msg::Length(_) => "LEN",
+                Msg::Metadata { .. } => "METADATA",
                 Msg::Piece(i, _) => i,
             })
             .collect::<HashSet<&str>>();
@@ -190,7 +193,7 @@ impl Machine<Started> {
         self.state
             .expected_iterations
             .iter()
-            .filter(|s| !received_iterations.contains(s as &str)) // what the hell is this... why can't just s.
+            .filter(|s| !received_iterations.contains(s as &str))
             .collect()
     }
 
@@ -220,10 +223,9 @@ trait Receive {
 
         received_msgs.insert(msg.clone());
 
-        match msg.clone() {
-            Msg::Name(name) => self.set_name(String::from_utf8(base10::decode(&name)).unwrap()),
-            Msg::Hash(hash) => self.set_hash(hash.to_string()),
-            _ => (),
+        if let Msg::Metadata { name, hash, .. } = msg.clone() {
+            self.set_name(String::from_utf8(base10::decode(&name)).unwrap());
+            self.set_hash(hash);
         }
 
         log(&format!("processed {:?}", msg));
@@ -278,14 +280,14 @@ impl Decoder {
 
     pub fn get_progress(&self) -> String {
         match &self.decoder {
-            MachineWrapper::Initted(_) => "No LEN yet.".to_string(),
+            MachineWrapper::Initted(_) => "No METADATA yet.".to_string(),
             MachineWrapper::Finished(_) => "Finished.".to_string(),
             MachineWrapper::Started(machine) => {
                 let mut expecting = machine.expecting().into_iter().collect::<Vec<&String>>();
                 expecting.sort_by(|x, y| {
-                    if (x == &"NAME") | (x == &"LEN") | (x == &"HASH") {
+                    if x == &"METADATA" {
                         Ordering::Less
-                    } else if (y == &"NAME") | (y == &"LEN") | (y == &"HASH") {
+                    } else if y == &"METADATA" {
                         Ordering::Greater
                     } else {
                         x.parse::<usize>()
@@ -295,8 +297,8 @@ impl Decoder {
                 });
                 format!(
                     "{}/{}, expecting: {}.",
-                    machine.state.length + 3 - expecting.len(),
-                    machine.state.length + 3,
+                    machine.state.length + 1 - expecting.len(),
+                    machine.state.length + 1,
                     expecting
                         .into_iter()
                         .map(|s| s.to_string())
@@ -335,8 +337,8 @@ impl Decoder {
             MachineWrapper::Initted(decoder) => {
                 let updated = decoder.update(msg.clone());
                 if updated {
-                    if let Msg::Length(length) = msg {
-                        decoder.state.length = Some(length.to_string().parse::<usize>().unwrap());
+                    if let Msg::Metadata { length, .. } = msg {
+                        decoder.state.length = Some(length);
                     }
                 }
                 updated
@@ -391,11 +393,7 @@ impl Decoder {
 fn test_decoder() {
     let mut decoder = Decoder::new();
 
-    decoder.process_chunk("NAME:2597379451834392631223363866405679089128269172".to_string());
-    println!("{}", decoder.get_progress());
-    decoder.process_chunk("LEN:2".to_string());
-    println!("{}", decoder.get_progress());
-    decoder.process_chunk("HASH:bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
+    decoder.process_chunk("METADATA:2597379451834392631223363866405679089128269172,2,bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
     println!("{}", decoder.get_progress());
     decoder.process_chunk("1:2481676554535304448989663285024985913136368361479567388366436794976484106841552224124172984975668570544709175647171746092269804540550994669301355164043499806044980564484156500177098332432694272017792190515369801561555600289680265659814032923".to_string());
     println!("{}", decoder.get_progress());
@@ -410,13 +408,11 @@ fn test_decoder() {
 }
 
 #[test]
-fn test_when_len_came_at_last() {
+fn test_when_metadata_came_at_last() {
     let mut decoder = Decoder::new();
-    decoder.process_chunk("NAME:2597379451834392631223363866405679089128269172".to_string());
-    decoder.process_chunk("HASH:bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
     decoder.process_chunk("1:2481676554535304448989663285024985913136368361479567388366436794976484106841552224124172984975668570544709175647171746092269804540550994669301355164043499806044980564484156500177098332432694272017792190515369801561555600289680265659814032923".to_string());
     decoder.process_chunk("2:8633128646008937860073585629".to_string());
-    decoder.process_chunk("LEN:2".to_string());
+    decoder.process_chunk("METADATA:2597379451834392631223363866405679089128269172,2,bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
 
     let res = decoder.get_finished();
     let decoded_data = BASE64_STANDARD.decode(res.to_base64()).unwrap();
