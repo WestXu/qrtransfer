@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Default, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Metadata {
     pub name: String,
     pub length: usize,

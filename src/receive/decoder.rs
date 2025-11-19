@@ -3,6 +3,7 @@
 use crate::base10;
 use crate::compress::decompress;
 use crate::protocol::Message;
+use crate::protocol::Metadata;
 use crate::utils::hash;
 use crate::utils::log;
 use base64::{prelude::BASE64_STANDARD, Engine as _};
@@ -17,24 +18,19 @@ use wasm_bindgen::prelude::*;
 #[derive(Default)]
 struct Initted {
     received_msgs: HashSet<Message>,
-    file_name: Option<String>,
-    hash: Option<String>,
-    length: Option<usize>,
+    metadata: Option<Metadata>,
 }
 
 #[derive(Default)]
 struct Started {
     expected_iterations: HashSet<String>,
     received_msgs: HashSet<Message>,
-    file_name: Option<String>,
-    hash: Option<String>,
-    length: usize,
+    metadata: Metadata,
 }
 
 #[wasm_bindgen]
 pub struct Finished {
-    file_name: String,
-    hash: String,
+    metadata: Metadata,
     data: Vec<u8>,
 }
 
@@ -48,7 +44,7 @@ impl Finished {
     fn check_integrity(&self) {
         let final_hash = hash(&self.data);
 
-        let received_hash = &self.hash;
+        let received_hash = &self.metadata.hash;
         if received_hash != &final_hash {
             panic!("[*] Expected: {}, got: {}", received_hash, final_hash)
         }
@@ -61,7 +57,7 @@ impl Finished {
     }
 
     pub fn get_name(&self) -> String {
-        self.file_name.clone()
+        self.metadata.name.clone()
     }
 }
 
@@ -88,7 +84,7 @@ impl Default for Machine<Started> {
 
 impl From<Machine<Initted>> for Machine<Started> {
     fn from(machine: Machine<Initted>) -> Machine<Started> {
-        let length = machine.state.length.unwrap();
+        let length = machine.state.metadata.as_ref().unwrap().length;
         log(&format!("[*] The message will come in {} parts", length));
         Machine {
             state: Started {
@@ -101,9 +97,7 @@ impl From<Machine<Initted>> for Machine<Started> {
                     iterations
                 },
                 received_msgs: machine.state.received_msgs,
-                file_name: machine.state.file_name,
-                hash: machine.state.hash,
-                length,
+                metadata: machine.state.metadata.unwrap(),
             },
         }
     }
@@ -114,8 +108,7 @@ impl From<Machine<Started>> for Machine<Finished> {
         assert!(machine.check_finished(), "Incomplete data.");
         Machine {
             state: Finished {
-                file_name: machine.state.file_name.unwrap(),
-                hash: machine.state.hash.unwrap(),
+                metadata: machine.state.metadata,
                 data: {
                     let mut ordered_iteration = machine
                         .state
@@ -124,8 +117,10 @@ impl From<Machine<Started>> for Machine<Finished> {
                         .filter(|msg| matches!(msg, Message::Piece { .. }))
                         .collect::<Vec<Message>>();
                     ordered_iteration.sort_by(|x, y| {
-                        if let (Message::Piece { index: xi, .. }, Message::Piece { index: yi, .. }) =
-                            (x, y)
+                        if let (
+                            Message::Piece { index: xi, .. },
+                            Message::Piece { index: yi, .. },
+                        ) = (x, y)
                         {
                             xi.cmp(yi)
                         } else {
@@ -176,15 +171,10 @@ impl Machine<Started> {
 }
 
 trait Receive {
-    fn get_mut_name(&mut self) -> &mut Option<String>;
-    fn set_name(&mut self, name: String) {
-        log(&format!("[*] File name: {}", name));
-        *(self.get_mut_name()) = Some(name)
-    }
-    fn get_mut_hash(&mut self) -> &mut Option<String>;
-    fn set_hash(&mut self, hash: String) {
-        log(&format!("[*] Hash: {}", hash));
-        *(self.get_mut_hash()) = Some(hash)
+    fn get_mut_metadata(&mut self) -> &mut Option<Metadata>;
+    fn set_metadata(&mut self, metadata: Metadata) {
+        log(&format!("[*] Metadata: {}", metadata));
+        *(self.get_mut_metadata()) = Some(metadata)
     }
     fn get_mut_received_msgs(&mut self) -> &mut HashSet<Message>;
     fn update(&mut self, msg: Message) -> bool {
@@ -197,8 +187,7 @@ trait Receive {
         received_msgs.insert(msg.clone());
 
         if let Message::Metadata(metadata) = msg.clone() {
-            self.set_name(String::from_utf8(base10::decode(&metadata.name)).unwrap());
-            self.set_hash(metadata.hash);
+            self.set_metadata(metadata);
         }
 
         log(&format!("processed {:?}", msg));
@@ -207,22 +196,16 @@ trait Receive {
 }
 
 impl Receive for Machine<Initted> {
-    fn get_mut_name(&mut self) -> &mut Option<String> {
-        &mut self.state.file_name
-    }
-    fn get_mut_hash(&mut self) -> &mut Option<String> {
-        &mut self.state.hash
+    fn get_mut_metadata(&mut self) -> &mut Option<Metadata> {
+        &mut self.state.metadata
     }
     fn get_mut_received_msgs(&mut self) -> &mut HashSet<Message> {
         &mut self.state.received_msgs
     }
 }
 impl Receive for Machine<Started> {
-    fn get_mut_name(&mut self) -> &mut Option<String> {
-        &mut self.state.file_name
-    }
-    fn get_mut_hash(&mut self) -> &mut Option<String> {
-        &mut self.state.hash
+    fn get_mut_metadata(&mut self) -> &mut Option<Metadata> {
+        panic!("Started state already has metadata.")
     }
     fn get_mut_received_msgs(&mut self) -> &mut HashSet<Message> {
         &mut self.state.received_msgs
@@ -270,8 +253,8 @@ impl Decoder {
                 });
                 format!(
                     "{}/{}, expecting: {}.",
-                    machine.state.length + 1 - expecting.len(),
-                    machine.state.length + 1,
+                    machine.state.metadata.length + 1 - expecting.len(),
+                    machine.state.metadata.length + 1,
                     expecting
                         .into_iter()
                         .map(|s| s.to_string())
@@ -289,7 +272,7 @@ impl Decoder {
     fn try_evolve(&mut self) {
         match &mut self.decoder {
             MachineWrapper::Initted(decoder) => {
-                if decoder.state.length.is_some() {
+                if decoder.state.metadata.is_some() {
                     self.decoder = MachineWrapper::Started(take(decoder).into());
                     self.try_evolve(); // may evolve agian
                 }
@@ -317,7 +300,7 @@ impl Decoder {
                 let updated = decoder.update(msg.clone());
                 if updated {
                     if let Message::Metadata(ref metadata) = msg {
-                        decoder.state.length = Some(metadata.length);
+                        decoder.state.metadata = Some(metadata.clone());
                     }
                 }
                 updated
