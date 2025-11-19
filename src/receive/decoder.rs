@@ -57,7 +57,8 @@ impl Finished {
     }
 
     pub fn get_name(&self) -> String {
-        self.metadata.name.clone()
+        let decoded_bytes = base10::decode(&self.metadata.name);
+        String::from_utf8(decoded_bytes).unwrap_or_else(|_| self.metadata.name.clone())
     }
 }
 
