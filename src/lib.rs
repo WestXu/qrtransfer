@@ -1,7 +1,6 @@
 use dioxus::signals::{GlobalSignal, Signal};
 use indexmap::IndexMap;
 
-pub mod base10;
 pub mod compress;
 pub mod protocol;
 pub mod receive;

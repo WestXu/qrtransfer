@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 
-use crate::base10;
 use crate::compress::decompress;
 use crate::protocol::Message;
 use crate::protocol::Metadata;
@@ -57,7 +56,7 @@ impl Finished {
     }
 
     pub fn get_name(&self) -> String {
-        let decoded_bytes = base10::decode(&self.metadata.name);
+        let decoded_bytes = BASE64_STANDARD.decode(&self.metadata.name).unwrap();
         String::from_utf8(decoded_bytes).unwrap_or_else(|_| self.metadata.name.clone())
     }
 }
@@ -133,7 +132,7 @@ impl From<Machine<Started>> for Machine<Finished> {
                         .iter()
                         .map(|msg| {
                             if let Message::Piece { data, .. } = msg {
-                                base10::decode(data)
+                                BASE64_STANDARD.decode(data).unwrap()
                             } else {
                                 panic!("")
                             }
@@ -356,11 +355,14 @@ impl Decoder {
 fn test_decoder() {
     let mut decoder = Decoder::new();
 
-    decoder.process_chunk("METADATA:2597379451834392631223363866405679089128269172,2,bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
+    decoder.process_chunk(
+        "METADATA:dGVzdF9xcnRyYW5zZmVyLnR4dA==,2,bf0c337e1d303f70a099465a726ef627ef91c4db"
+            .to_string(),
+    );
     println!("{}", decoder.get_progress());
-    decoder.process_chunk("1:2481676554535304448989663285024985913136368361479567388366436794976484106841552224124172984975668570544709175647171746092269804540550994669301355164043499806044980564484156500177098332432694272017792190515369801561555600289680265659814032923".to_string());
+    decoder.process_chunk("1:G7YA4MVyW6oXCn6KbhrMx0C9wiM8U0+WhRrPCKomVFU2OVunN7y5HhGHtMnB5hPiEp8t9bCBGnjYey3YRlLaTxOWCBIsfQ5bSXyDSXg2x69btma2UFu4x4svyoIGUQyUNPFGXw==".to_string());
     println!("{}", decoder.get_progress());
-    decoder.process_chunk("2:8633128646008937860073585629".to_string());
+    decoder.process_chunk("2:3fsUxrFm4KoZKOUb".to_string());
     println!("{}", decoder.get_progress());
 
     let res = decoder.get_finished();
@@ -373,9 +375,12 @@ fn test_decoder() {
 #[test]
 fn test_when_metadata_came_at_last() {
     let mut decoder = Decoder::new();
-    decoder.process_chunk("1:2481676554535304448989663285024985913136368361479567388366436794976484106841552224124172984975668570544709175647171746092269804540550994669301355164043499806044980564484156500177098332432694272017792190515369801561555600289680265659814032923".to_string());
-    decoder.process_chunk("2:8633128646008937860073585629".to_string());
-    decoder.process_chunk("METADATA:2597379451834392631223363866405679089128269172,2,bf0c337e1d303f70a099465a726ef627ef91c4db".to_string());
+    decoder.process_chunk("1:G7YA4MVyW6oXCn6KbhrMx0C9wiM8U0+WhRrPCKomVFU2OVunN7y5HhGHtMnB5hPiEp8t9bCBGnjYey3YRlLaTxOWCBIsfQ5bSXyDSXg2x69btma2UFu4x4svyoIGUQyUNPFGXw==".to_string());
+    decoder.process_chunk("2:3fsUxrFm4KoZKOUb".to_string());
+    decoder.process_chunk(
+        "METADATA:dGVzdF9xcnRyYW5zZmVyLnR4dA==,2,bf0c337e1d303f70a099465a726ef627ef91c4db"
+            .to_string(),
+    );
 
     let res = decoder.get_finished();
     let decoded_data = BASE64_STANDARD.decode(res.to_base64()).unwrap();

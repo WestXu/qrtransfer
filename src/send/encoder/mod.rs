@@ -1,8 +1,8 @@
 use crate::protocol::{Message, Metadata, Payload};
 use crate::utils::{hash, log};
 mod qr;
-use crate::base10;
 use crate::compress;
+use base64::{prelude::BASE64_STANDARD, Engine as _};
 use indexmap::IndexMap;
 use qr::qr;
 
@@ -31,7 +31,7 @@ impl Encoder {
 
     fn get_metadata(&self, length: usize) -> Metadata {
         Metadata::new(
-            base10::encode(self.file_name.as_bytes()),
+            BASE64_STANDARD.encode(self.file_name.as_bytes()),
             length,
             hash(&self.data),
         )
@@ -43,7 +43,7 @@ impl Encoder {
         let pieces = chunks
             .iter()
             .enumerate()
-            .map(|(counter, data)| (counter + 1, base10::encode(data)))
+            .map(|(counter, data)| (counter + 1, BASE64_STANDARD.encode(data)))
             .collect();
 
         Payload::new(metadata, pieces)
