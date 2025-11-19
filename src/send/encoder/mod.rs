@@ -1,3 +1,4 @@
+use crate::protocol::{Message, Metadata, Payload};
 use crate::utils::{hash, log};
 mod qr;
 use crate::base10;
@@ -28,26 +29,37 @@ impl Encoder {
         chunks
     }
 
-    fn get_metadata(&self, length: usize) -> String {
-        format!(
-            "METADATA:{},{},{}",
+    fn get_metadata(&self, length: usize) -> Metadata {
+        Metadata::new(
             base10::encode(self.file_name.as_bytes()),
             length,
-            hash(&self.data)
+            hash(&self.data),
         )
     }
 
-    pub fn payloads(self) -> IndexMap<String, String> {
+    pub fn get_payload(&self) -> Payload {
         let chunks = self.get_chunks();
+        let metadata = self.get_metadata(chunks.len());
+        let pieces = chunks
+            .iter()
+            .enumerate()
+            .map(|(counter, data)| (counter + 1, base10::encode(data)))
+            .collect();
+
+        Payload::new(metadata, pieces)
+    }
+
+    pub fn payloads(self) -> IndexMap<String, String> {
+        let payload = self.get_payload();
 
         let mut payloads = IndexMap::new();
-        payloads.insert("METADATA".to_string(), self.get_metadata(chunks.len()));
 
-        for (counter, data) in chunks.iter().enumerate() {
-            payloads.insert(
-                format!("{}", counter + 1),
-                format!("{}:{}", counter + 1, base10::encode(data)),
-            );
+        let metadata_msg = Message::Metadata(payload.metadata);
+        payloads.insert("METADATA".to_string(), metadata_msg.to_string());
+
+        for (index, data) in payload.pieces {
+            let piece_msg = Message::Piece { index, data };
+            payloads.insert(format!("{}", index), piece_msg.to_string());
         }
 
         payloads

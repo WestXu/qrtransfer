@@ -3,6 +3,7 @@ use indexmap::IndexMap;
 
 pub mod base10;
 pub mod compress;
+pub mod protocol;
 pub mod receive;
 pub mod send;
 pub mod utils;

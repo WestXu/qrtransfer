@@ -2,6 +2,7 @@
 
 use crate::base10;
 use crate::compress::decompress;
+use crate::protocol::Message;
 use crate::utils::hash;
 use crate::utils::log;
 use base64::{prelude::BASE64_STANDARD, Engine as _};
@@ -10,40 +11,12 @@ use quircs::Quirc;
 use std::cmp::Ordering;
 use std::collections::HashSet;
 use std::mem::take;
+use std::str::FromStr;
 use wasm_bindgen::prelude::*;
-
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
-enum Msg {
-    Metadata {
-        name: String,
-        length: usize,
-        hash: String,
-    },
-    Piece(String, String),
-}
-
-impl Msg {
-    fn new(chunk: String) -> Self {
-        let split = chunk.split(':').collect::<Vec<&str>>();
-        let i = split[0];
-        let data = split[1];
-        match i {
-            "METADATA" => {
-                let parts: Vec<&str> = data.split(',').collect();
-                Msg::Metadata {
-                    name: parts[0].to_string(),
-                    length: parts[1].parse::<usize>().unwrap(),
-                    hash: parts[2].to_string(),
-                }
-            }
-            _ => Msg::Piece(i.to_string(), data.to_string()),
-        }
-    }
-}
 
 #[derive(Default)]
 struct Initted {
-    received_msgs: HashSet<Msg>,
+    received_msgs: HashSet<Message>,
     file_name: Option<String>,
     hash: Option<String>,
     length: Option<usize>,
@@ -52,7 +25,7 @@ struct Initted {
 #[derive(Default)]
 struct Started {
     expected_iterations: HashSet<String>,
-    received_msgs: HashSet<Msg>,
+    received_msgs: HashSet<Message>,
     file_name: Option<String>,
     hash: Option<String>,
     length: usize,
@@ -148,13 +121,13 @@ impl From<Machine<Started>> for Machine<Finished> {
                         .state
                         .received_msgs
                         .into_iter()
-                        .filter(|msg| matches!(msg, Msg::Piece(_, _)))
-                        .collect::<Vec<Msg>>();
+                        .filter(|msg| matches!(msg, Message::Piece { .. }))
+                        .collect::<Vec<Message>>();
                     ordered_iteration.sort_by(|x, y| {
-                        if let (Msg::Piece(xi, _), Msg::Piece(yi, _)) = (x, y) {
-                            xi.parse::<usize>()
-                                .unwrap()
-                                .cmp(&yi.parse::<usize>().unwrap())
+                        if let (Message::Piece { index: xi, .. }, Message::Piece { index: yi, .. }) =
+                            (x, y)
+                        {
+                            xi.cmp(yi)
                         } else {
                             panic!("")
                         }
@@ -163,7 +136,7 @@ impl From<Machine<Started>> for Machine<Finished> {
                     let data = ordered_iteration
                         .iter()
                         .map(|msg| {
-                            if let Msg::Piece(_, data) = msg {
+                            if let Message::Piece { data, .. } = msg {
                                 base10::decode(data)
                             } else {
                                 panic!("")
@@ -185,15 +158,15 @@ impl Machine<Started> {
             .received_msgs
             .iter()
             .map(|it| match it {
-                Msg::Metadata { .. } => "METADATA",
-                Msg::Piece(i, _) => i,
+                Message::Metadata(_) => "METADATA".to_string(),
+                Message::Piece { index, .. } => index.to_string(),
             })
-            .collect::<HashSet<&str>>();
+            .collect::<HashSet<String>>();
 
         self.state
             .expected_iterations
             .iter()
-            .filter(|s| !received_iterations.contains(s as &str))
+            .filter(|s| !received_iterations.contains(*s))
             .collect()
     }
 
@@ -213,8 +186,8 @@ trait Receive {
         log(&format!("[*] Hash: {}", hash));
         *(self.get_mut_hash()) = Some(hash)
     }
-    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Msg>;
-    fn update(&mut self, msg: Msg) -> bool {
+    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Message>;
+    fn update(&mut self, msg: Message) -> bool {
         let received_msgs = self.get_mut_received_msgs();
 
         if received_msgs.contains(&msg) {
@@ -223,9 +196,9 @@ trait Receive {
 
         received_msgs.insert(msg.clone());
 
-        if let Msg::Metadata { name, hash, .. } = msg.clone() {
-            self.set_name(String::from_utf8(base10::decode(&name)).unwrap());
-            self.set_hash(hash);
+        if let Message::Metadata(metadata) = msg.clone() {
+            self.set_name(String::from_utf8(base10::decode(&metadata.name)).unwrap());
+            self.set_hash(metadata.hash);
         }
 
         log(&format!("processed {:?}", msg));
@@ -240,7 +213,7 @@ impl Receive for Machine<Initted> {
     fn get_mut_hash(&mut self) -> &mut Option<String> {
         &mut self.state.hash
     }
-    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Msg> {
+    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Message> {
         &mut self.state.received_msgs
     }
 }
@@ -251,7 +224,7 @@ impl Receive for Machine<Started> {
     fn get_mut_hash(&mut self) -> &mut Option<String> {
         &mut self.state.hash
     }
-    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Msg> {
+    fn get_mut_received_msgs(&mut self) -> &mut HashSet<Message> {
         &mut self.state.received_msgs
     }
 }
@@ -331,14 +304,20 @@ impl Decoder {
     }
 
     pub fn process_chunk(&mut self, chunk: String) -> bool {
-        let msg = Msg::new(chunk);
+        let msg = match Message::from_str(&chunk) {
+            Ok(msg) => msg,
+            Err(e) => {
+                log(&format!("Failed to parse message: {}", e));
+                return false;
+            }
+        };
 
         let updated = match &mut self.decoder {
             MachineWrapper::Initted(decoder) => {
                 let updated = decoder.update(msg.clone());
                 if updated {
-                    if let Msg::Metadata { length, .. } = msg {
-                        decoder.state.length = Some(length);
+                    if let Message::Metadata(ref metadata) = msg {
+                        decoder.state.length = Some(metadata.length);
                     }
                 }
                 updated
