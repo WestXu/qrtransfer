@@ -6,11 +6,38 @@ This is a proof-of-concept project, implemented in Rust WebAssembly.
 
 ![Demo](demo.gif)
 
-1. Open [https://qrtransfer.westxu.com](https://qrtransfer.westxu.com) on your PC, select file, zoom/adjust the browser window as you wish. Note that this site is static, which means the file will be processed natively in your browser and won't be uploaded to any server.
-2. Open [https://qrtransfer.westxu.com](https://qrtransfer.westxu.com) on your phone, scan using your camera. until finishing scanning all the qrcodes, and then save the reassembled file.
+1. Open [qrtransfer.westxu.com](https://qrtransfer.westxu.com) on one of your device, select file, wait for it to be processed.
+2. Open [qrtransfer.westxu.com](https://qrtransfer.westxu.com) on your another device, scan using the camera until finishing scanning all the qrcodes, and then save the reassembled file.
 
-## Note
+## FAQ
 
-If your browser somehow couldn't access local files, download an offline version from [release](https://github.com/WestXu/qrtransfer/releases).
+#### How does it work?
 
-The transfer speed is ~1KB/s. I know, but it works.
+Sender:
+
+* Read the file into binary data
+* Compress it
+* Hash it
+* Split it into a lot of chunks
+* Encode each chunk into a small qrcode
+* Play them one by one
+
+Receiver:
+
+* Scan all the qrcodes
+* Reassemble the chunks into one
+* Validate the hash
+* Decompress
+* Save the file
+
+#### Privacy?
+
+The website is static, hosted on github pages, and auto-deployed by github actions. The file will be processed natively in your browser and won't be uploaded to any server. Try turn off your wifi before selecting the file.
+
+#### Offline version?
+
+Check [release](https://github.com/WestXu/qrtransfer/releases).
+
+#### Transfer speed?
+
+~1KB/s. I know, but it works.
