@@ -1,5 +1,5 @@
 use crate::protocol::{Message, Metadata, Payload};
-use crate::utils::{hash, log};
+use crate::utils::hash;
 mod qr;
 use crate::compress;
 use base64::{prelude::BASE64_STANDARD, Engine as _};
@@ -68,10 +68,7 @@ impl Encoder {
     pub fn to_qr(self) -> IndexMap<String, String> {
         self.payloads()
             .iter()
-            .map(|(name, payload)| {
-                log(payload);
-                (name.to_string(), qr(payload))
-            })
+            .map(|(name, payload)| (name.to_string(), qr(payload)))
             .collect()
     }
 }

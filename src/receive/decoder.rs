@@ -190,7 +190,6 @@ trait Receive {
             self.set_metadata(metadata);
         }
 
-        log(&format!("processed {:?}", msg));
         true
     }
 }
