@@ -49,6 +49,7 @@ web-sys = { version = "0.3.82", features = [
 dioxus = { version = "0.7.1", features = ["web"] }
 js-sys = "0.3.82"
 gloo-timers = "0.3.0"
+mime_guess = "2.0.5"
 
 [profile]
 

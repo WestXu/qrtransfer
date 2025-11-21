@@ -61,8 +61,14 @@ async fn beep_n(n: i32) {
 fn add_download(base64_data: &str, file_name: &str) {
     let document = web_sys::window().unwrap().document().unwrap();
     let a = document.create_element("a").unwrap();
-    a.set_attribute("href", &format!("data:;base64,{}", base64_data))
-        .unwrap();
+    let mime_type = mime_guess::from_path(file_name)
+        .first_or_octet_stream()
+        .to_string();
+    a.set_attribute(
+        "href",
+        &format!("data:{};base64,{}", mime_type, base64_data),
+    )
+    .unwrap();
     a.set_attribute("download", file_name).unwrap();
     a.set_inner_html("Download");
     document
