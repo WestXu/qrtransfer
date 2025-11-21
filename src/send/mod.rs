@@ -59,7 +59,11 @@ pub fn QrResPage(props: QrRes) -> Element {
     let current_index = *qr_index.read() % total;
     let (_name, svg) = props.payloads.get_index(current_index).unwrap();
 
-    let play_pause_text = if *is_playing.read() { "⏸" } else { "▶" };
+    let play_pause_text = if *is_playing.read() {
+        "⏸️"
+    } else {
+        "▶️"
+    };
     let speed_text = format!("{}x", *playback_speed.read());
 
     let title = if current_index == 0 {
@@ -81,9 +85,25 @@ pub fn QrResPage(props: QrRes) -> Element {
                 }
             }
             div { class: "qr", dangerous_inner_html: "{svg}" }
-            div { style: "margin-top: 10px; font-size: 16px;", "{title}" }
+            div { style: "font-size: 16px;", "{title}" }
 
             div { style: "margin-top: 20px; display: flex; align-items: center; gap: 10px;",
+                input {
+                    r#type: "range",
+                    style: "width: 300px;",
+                    min: "0",
+                    max: "{total - 1}",
+                    value: "{current_index}",
+                    oninput: move |evt| {
+                        if let Ok(val) = evt.value().parse::<usize>() {
+                            *QR_INDEX.write() = val;
+                        }
+                    },
+                }
+
+
+            }
+            div { style: "margin-top: 20px; display: flex; justify-content: left; gap: 20px;",
                 button {
                     style: "font-size: 24px; padding: 5px 15px; cursor: pointer;",
                     onclick: move |_| {
@@ -95,7 +115,7 @@ pub fn QrResPage(props: QrRes) -> Element {
                         }
                         *QR_INDEX.write() = idx;
                     },
-                    "◄"
+                    "⏪"
                 }
                 button {
                     style: "font-size: 24px; padding: 5px 15px; cursor: pointer;",
@@ -111,20 +131,7 @@ pub fn QrResPage(props: QrRes) -> Element {
                         let idx = (*QR_INDEX.read() + 1) % total;
                         *QR_INDEX.write() = idx;
                     },
-                    "►"
-                }
-
-                input {
-                    r#type: "range",
-                    style: "width: 300px;",
-                    min: "0",
-                    max: "{total - 1}",
-                    value: "{current_index}",
-                    oninput: move |evt| {
-                        if let Ok(val) = evt.value().parse::<usize>() {
-                            *QR_INDEX.write() = val;
-                        }
-                    },
+                    "⏩"
                 }
 
                 select {
