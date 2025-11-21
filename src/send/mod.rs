@@ -70,6 +70,16 @@ pub fn QrResPage(props: QrRes) -> Element {
 
     rsx! {
         div { style: "display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh;",
+            div { style: "margin-bottom: 20px; display: flex; justify-content: left;",
+                button {
+                    style: "font-size: 18px; padding: 5px 15px; cursor: pointer;",
+                    onclick: move |_| {
+                        *QR_RES.write() = IndexMap::new();
+                        *QR_INDEX.write() = 0;
+                    },
+                    "← Back"
+                }
+            }
             div { class: "qr", dangerous_inner_html: "{svg}" }
             div { style: "margin-top: 10px; font-size: 16px;", "{title}" }
 
