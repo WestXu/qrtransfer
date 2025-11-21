@@ -1,14 +1,12 @@
-name: Release Windows
+name: release
 
-on:
-  workflow_dispatch:
+on: workflow_dispatch
 
 jobs:
-  build-windows:
+  deploy:
     runs-on: windows-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Generate tag
         id: tag
@@ -19,6 +17,19 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag $TAG
           git push origin $TAG
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Install Dioxus-CLI
+        shell: bash
+        run: cargo install dioxus-cli
+
+      - name: Build
+        shell: bash
+        run: dx bundle --release --platform web --out-dir dist
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -35,7 +46,7 @@ jobs:
 
       - name: Build Windows executable with Pake
         timeout-minutes: 15
-        run: npx pake-cli https://qrtransfer.westxu.com --name qrtransfer --wasm --enable-drag-drop
+        run: npx pake-cli ./dist/public/index.html --icon dist/public/favicon.svg --name qrtransfer --wasm --enable-drag-drop --use-local-file
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -44,3 +55,10 @@ jobs:
           files: qrtransfer.msi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist/public
+          cname: qrtransfer.westxu.com
