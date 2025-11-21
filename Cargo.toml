@@ -45,6 +45,8 @@ web-sys = { version = "0.3.82", features = [
     'MediaDevices',
     'ImageData',
     'MediaStreamTrack',
+    'MediaQueryList',
+    'MediaQueryListEvent',
 ] }
 dioxus = { version = "0.7.1", features = ["web"] }
 js-sys = "0.3.82"

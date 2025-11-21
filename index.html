@@ -7,6 +7,20 @@
     <title></title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
     <style>
+        :root {
+            --text-muted: #666;
+            --text-error: #dc3545;
+            --logo-invert: 0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-muted: #999;
+                --text-error: #ff6b6b;
+                --logo-invert: 0.85;
+            }
+        }
+
         svg {
             width: 400 !important;
             height: 400 !important;

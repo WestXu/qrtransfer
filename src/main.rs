@@ -6,8 +6,40 @@ use qrtransfer::receive::{start_receiving, stop_receiving, switch_camera};
 use qrtransfer::send::{self, QrResPage};
 use qrtransfer::utils::{log, set_panic_hook};
 use qrtransfer::QR_RES;
+use wasm_bindgen::prelude::*;
+use wasm_bindgen::JsCast;
 
 fn app() -> Element {
+    let mut theme = use_signal(|| "light".to_string());
+
+    use_effect(move || {
+        let window = web_sys::window().unwrap();
+        let media_query = window
+            .match_media("(prefers-color-scheme: dark)")
+            .unwrap()
+            .unwrap();
+
+        let is_dark = media_query.matches();
+        theme.set(if is_dark { "dark" } else { "light" }.to_string());
+
+        let closure = Closure::wrap(Box::new(move |event: web_sys::MediaQueryListEvent| {
+            let is_dark = event.matches();
+            theme.set(if is_dark { "dark" } else { "light" }.to_string());
+        }) as Box<dyn FnMut(_)>);
+
+        media_query
+            .add_listener_with_opt_callback(Some(closure.as_ref().unchecked_ref()))
+            .unwrap();
+
+        closure.forget();
+    });
+
+    use_effect(move || {
+        let doc = web_sys::window().unwrap().document().unwrap();
+        let html = doc.document_element().unwrap();
+        html.set_attribute("data-bs-theme", &theme.read()).unwrap();
+    });
+
     let payloads = QR_RES.read().clone();
     if payloads.is_empty() {
         rsx! {
@@ -78,7 +110,7 @@ fn app() -> Element {
                                         style: "cursor: pointer;",
                                         onclick: move |_| switch_camera(),
                                     }
-                                    div { style: "font-size: 0.85em; color: #666; margin-top: 5px;",
+                                    div { style: "font-size: 0.85em; color: var(--text-muted); margin-top: 5px;",
                                         "Click video to switch camera"
                                     }
                                     canvas { id: "canvas", style: "display: none;" }
@@ -107,7 +139,7 @@ fn app() -> Element {
                                     src: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
                                     alt: "GitHub",
                                     height: "30",
-                                    style: "opacity:0.6;margin-top:10;float:right",
+                                    style: "opacity:0.6;margin-top:10;float:right;filter:invert(var(--logo-invert))",
                                 }
                             }
                         }

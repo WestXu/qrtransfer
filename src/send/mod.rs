@@ -191,7 +191,7 @@ pub async fn read_file_content() {
 
     if file_size > MAX_FILE_SIZE {
         progress_div.set_inner_html(&format!(
-            "<span style='color: red;'>File too large: {:.2}MB. Maximum size is {MAX_FILE_SIZE_MB}MB.</span>",
+            "<span style='color: var(--text-error);'>File too large: {:.2}MB. Maximum size is {MAX_FILE_SIZE_MB}MB.</span>",
             file_size as f64 / (1024.0 * 1024.0)
         ));
         return;
