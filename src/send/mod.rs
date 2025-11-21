@@ -185,6 +185,18 @@ pub async fn read_file_content() {
     let file_name = file.name();
     log(&file_name);
 
+    const MAX_FILE_SIZE_MB: u64 = 20;
+    const MAX_FILE_SIZE: u64 = MAX_FILE_SIZE_MB * 1024 * 1024;
+    let file_size = file.size() as u64;
+
+    if file_size > MAX_FILE_SIZE {
+        progress_div.set_inner_html(&format!(
+            "<span style='color: red;'>File too large: {:.2}MB. Maximum size is {MAX_FILE_SIZE_MB}MB.</span>",
+            file_size as f64 / (1024.0 * 1024.0)
+        ));
+        return;
+    }
+
     let file_reader = web_sys::FileReader::new().unwrap();
 
     let fr_c = file_reader.clone();
