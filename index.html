@@ -7,6 +7,20 @@
     <title>qrtransfer</title>
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
     <style>
+        :root {
+            --text-muted: #666;
+            --text-error: #dc3545;
+            --logo-invert: 0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-muted: #999;
+                --text-error: #ff6b6b;
+                --logo-invert: 0.85;
+            }
+        }
+
         svg {
             width: 400 !important;
             height: 400 !important;
@@ -43,7 +57,7 @@
     <script>eruda.init();</script> -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<link rel="preload" as="script" href="/./assets/qrtransfer-dxh558f9a2aacdd1d33.js" crossorigin></head>
+<link rel="preload" as="script" href="/./assets/qrtransfer-dxh2e1d50c8ab5d12c3.js" crossorigin></head>
 
 <script>console.log("Initializing wasm...");</script>
 
@@ -55,7 +69,7 @@
             <div class="spinner-border ms-auto" role="status" aria-hidden="true"></div>
         </div>
     </div>
-<script type="module" async src="/./assets/qrtransfer-dxh558f9a2aacdd1d33.js"></script>
+<script type="module" async src="/./assets/qrtransfer-dxh2e1d50c8ab5d12c3.js"></script>
             </body>
 
 </html>
