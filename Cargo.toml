@@ -53,6 +53,9 @@ js-sys = "0.3.82"
 gloo-timers = "0.3.0"
 mime_guess = "2.0.5"
 
+[build-dependencies]
+reqwest = { version = "0.12", features = ["blocking"] }
+
 [profile]
 
 [profile.wasm-dev]

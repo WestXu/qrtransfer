@@ -6,9 +6,7 @@ default_platform = "web"
 title = "qrtransfer"
 
 [web.resource]
-style = ["https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css"]
-script = [
-    "https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.bundle.min.js",
-]
+style = ["assets/bootstrap/bootstrap.min.css"]
+script = ["assets/bootstrap/bootstrap.bundle.min.js"]
 
 [web.resource.dev]

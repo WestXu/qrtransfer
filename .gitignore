@@ -4,3 +4,5 @@ bin/
 wasm-pack.log
 tmp/
 dist/
+public/assets/bootstrap/
+public/assets/images/
