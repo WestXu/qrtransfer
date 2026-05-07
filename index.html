@@ -4,8 +4,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title></title>
+    <title>QR Transfer</title>
+    <meta name="description" content="Transfer files between devices using QR codes — no server, no internet required.">
+    <meta name="theme-color" content="#0d6efd">
     <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <link rel="apple-touch-icon" href="./favicon.svg">
+    <link rel="manifest" href="./manifest.json">
     <style>
         :root {
             --text-muted: #666;
@@ -22,21 +26,26 @@
         }
 
         svg {
-            width: 400 !important;
-            height: 400 !important;
+            max-width: 400px !important;
+            max-height: 400px !important;
+            width: 100% !important;
+            height: auto !important;
         }
 
         .float {
             position: fixed;
-            bottom: 140px;
-            right: 140px;
+            bottom: 20px;
+            right: 20px;
         }
 
         /* following 3 to centralize page */
         #inner-div {
             margin-left: auto;
             margin-right: auto;
-            width: 600px
+            max-width: 600px;
+            width: 100%;
+            padding: 0 16px;
+            box-sizing: border-box;
         }
 
         #middle-div {
@@ -57,7 +66,15 @@
     <script>eruda.init();</script> -->
 </head>
 
-<script>console.log("Initializing wasm...");</script>
+<script>
+    console.log("Initializing wasm...");
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').then(
+            (reg) => console.log('Service worker registered, scope:', reg.scope),
+            (err) => console.warn('Service worker registration failed:', err)
+        );
+    }
+</script>
 
 <body>
     <div id="main"> </div>
